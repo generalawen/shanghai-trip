@@ -2,7 +2,11 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
 <title>上海 10/2–10/6 游玩计划（可标记 · 可备注）</title>
 <style>
 :root{
@@ -12,12 +16,15 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
 body{
   background:var(--bg); color:var(--txt);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   font-size:15px; line-height:1.75;
+  -webkit-tap-highlight-color:transparent;
 }
-#content{max-width:1120px;margin:0 auto;padding:88px 20px 120px}
+/* --barh 由 JS 按工具条实际高度写入 */
+#content{max-width:1120px;margin:0 auto;padding:calc(var(--barh,56px) + 24px) 20px 120px}
 
 /* ---------- 工具条 ---------- */
 #bar{
@@ -58,8 +65,9 @@ h1{
 h2{
   font-size:19px;margin:0;padding:16px 0 12px;cursor:pointer;
   display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--line);
-  position:sticky;top:56px;background:var(--card);z-index:5;
+  position:sticky;top:var(--barh,56px);background:var(--card);z-index:5;
 }
+h2,h3,h4{scroll-margin-top:calc(var(--barh,56px) + 10px)}
 h2::before{content:"▾";color:var(--muted);font-size:13px;transition:.2s}
 section.sec.collapsed h2::before{content:"▸"}
 section.sec.collapsed > *:not(h2){display:none}
@@ -139,10 +147,93 @@ tr.note-row .note-box textarea{min-height:50px}
 }
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-@media (max-width:640px){
-  #content{padding:96px 12px 100px}
-  #bar .title{width:100%}
-  h2{font-size:17px;padding:12px 0 10px}
+/* ---------- 手机端 ---------- */
+@media (max-width:720px){
+  #content{
+    padding:calc(var(--barh,56px) + 12px) calc(10px + env(safe-area-inset-left)) calc(96px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-right));
+  }
+
+  /* 工具条压缩成一行，横向可滑 */
+  #bar{
+    padding:8px calc(10px + env(safe-area-inset-right)) 8px calc(10px + env(safe-area-inset-left));
+    gap:8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    box-shadow:0 1px 4px rgba(16,24,40,.07);
+  }
+  #bar .title,#bar .spacer{display:none}
+  #progWrap{min-width:128px;flex:0 0 auto}
+  #progTxt{font-size:11px}
+  .btn,.seg button{padding:8px 11px;font-size:13px;white-space:nowrap;min-height:34px}
+  .seg{flex:0 0 auto}
+
+  /* 排版收紧 */
+  h1{font-size:19px;margin:16px 0 12px;padding:12px 14px}
+  h2{font-size:16px;padding:12px 0 10px;gap:7px}
+  h2 .sec-prog{font-size:11px}
+  h3{font-size:15px;margin:18px 0 8px}
+  h4{font-size:14px}
+  section.sec{border-radius:12px;padding:4px 14px 16px;margin:0 0 14px}
+  blockquote{padding:9px 12px;font-size:14px}
+  code{font-size:12px}
+
+  /* 表格 -> 卡片（免横向滚动） */
+  .table-wrap{overflow:visible;border:0;border-radius:0;margin:12px 0;background:none}
+  table.plan-table{min-width:0;display:block;font-size:14px}
+  table.plan-table thead{display:none}
+  table.plan-table tbody{display:block}
+  table.plan-table tr.task{
+    display:block;position:relative;background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:10px 12px 10px 36px;margin:0 0 10px;
+    box-shadow:0 1px 2px rgba(16,24,40,.04);
+  }
+  table.plan-table tr.task:hover{background:#fff}
+  table.plan-table tr.task td{
+    display:grid;grid-template-columns:4.4em 1fr;gap:2px 8px;
+    border:0;padding:1px 0;vertical-align:top;word-break:break-word;
+  }
+  table.plan-table tr.task td::before{
+    content:attr(data-label);color:var(--muted);font-size:12px;line-height:1.75;
+  }
+  /* 首列当标题：加粗、不显示字段名 */
+  table.plan-table tr.task td.col-chk + td{
+    display:block;font-weight:600;font-size:15px;line-height:1.6;margin:0 28px 4px 0;
+  }
+  table.plan-table tr.task td.col-chk + td::before,
+  table.plan-table tr.task td.col-chk::before,
+  table.plan-table tr.task td.col-note::before,
+  table.plan-table tr.task td[data-label=""]::before{content:none}
+  table.plan-table tr.task td[data-label=""]{grid-template-columns:1fr}
+  table.plan-table tr.task td:empty{display:none}
+  /* 勾选框 / 备注按钮 钉在卡片左上、右上 */
+  table.plan-table tr.task td.col-chk,
+  table.plan-table tr.task td.col-note{display:block;width:auto;padding:0!important;border:0}
+  table.plan-table tr.task td.col-chk{position:absolute;left:11px;top:12px}
+  table.plan-table tr.task td.col-note{position:absolute;right:8px;top:8px}
+  /* 备注行 */
+  table.plan-table tr.note-row{display:block;margin:-6px 0 0}
+  table.plan-table tr.note-row td{display:block;background:transparent;padding:0!important;border:0}
+  table.plan-table tr.note-row .note-box{
+    margin:0 0 10px;border-radius:8px;border:1px solid #dbeafe;border-left:3px solid var(--accent);
+  }
+  /* 完成态 */
+  table.plan-table tr.task.done{background:#f0fdf4;border-color:#a7f3d0}
+  table.plan-table tr.task.done td{background:transparent;text-decoration:none;color:var(--muted)}
+  table.plan-table tr.task.done td.col-chk + td{text-decoration:line-through;text-decoration-color:#cbd5e1}
+
+  /* 触控区放大 */
+  .task-row{padding:6px 4px}
+  li.task{margin:4px 0}
+  .chk{width:28px;height:28px;margin-top:0}
+  .chkbox{width:19px;height:19px}
+  .note-btn{padding:6px 10px;font-size:14px;min-height:32px}
+  .note-box{margin:6px 0 10px 20px}
+  .note-box textarea{font-size:16px;min-height:66px}
+  .task-list .task-list{padding-left:20px}
+  #toast{bottom:calc(20px + env(safe-area-inset-bottom));font-size:13px}
+}
+
+@media (max-width:360px){
+  table.plan-table tr.task td{grid-template-columns:1fr;gap:0}
+  table.plan-table tr.task td::before{font-size:11px}
 }
 
 @media print{
@@ -197,55 +288,55 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T1-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>10/1</strong></td>
-<td>周四 · 国庆节</td>
-<td><strong>晚上抵达</strong>：入住共康智选假日（1 号线呼兰路站），就近宵夜（彭浦一炸 / 胖叔叔，回酒店顺路）</td>
-<td><strong>第 1 晚</strong></td>
+<td data-label="日期"><strong>10/1</strong></td>
+<td data-label="星期">周四 · 国庆节</td>
+<td data-label="行程"><strong>晚上抵达</strong>：入住共康智选假日（1 号线呼兰路站），就近宵夜（彭浦一炸 / 胖叔叔，回酒店顺路）</td>
+<td data-label="住宿"><strong>第 1 晚</strong></td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T1-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>10/2</strong></td>
-<td>周五</td>
-<td><strong>Day 1</strong> 外滩轴线 · 上海的灵魂夜景</td>
-<td>第 2 晚</td>
+<td data-label="日期"><strong>10/2</strong></td>
+<td data-label="星期">周五</td>
+<td data-label="行程"><strong>Day 1</strong> 外滩轴线 · 上海的灵魂夜景</td>
+<td data-label="住宿">第 2 晚</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T1-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>10/3</strong></td>
-<td>周六</td>
-<td><strong>Day 2</strong> 老城厢 · 本帮味道与八宝鸭</td>
-<td>第 3 晚</td>
+<td data-label="日期"><strong>10/3</strong></td>
+<td data-label="星期">周六</td>
+<td data-label="行程"><strong>Day 2</strong> 老城厢 · 本帮味道与八宝鸭</td>
+<td data-label="住宿">第 3 晚</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T1-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>10/4</strong></td>
-<td>周日</td>
-<td><strong>Day 3</strong> 梧桐区 Citywalk · 文艺与一顿好饭</td>
-<td>第 4 晚</td>
+<td data-label="日期"><strong>10/4</strong></td>
+<td data-label="星期">周日</td>
+<td data-label="行程"><strong>Day 3</strong> 梧桐区 Citywalk · 文艺与一顿好饭</td>
+<td data-label="住宿">第 4 晚</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T1-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>10/5</strong></td>
-<td>周一</td>
-<td><strong>Day 4</strong> 古镇与近郊 · 朱家角 + 蟠龙天地</td>
-<td><strong>第 5 晚</strong></td>
+<td data-label="日期"><strong>10/5</strong></td>
+<td data-label="星期">周一</td>
+<td data-label="行程"><strong>Day 4</strong> 古镇与近郊 · 朱家角 + 蟠龙天地</td>
+<td data-label="住宿"><strong>第 5 晚</strong></td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T1-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>10/6</strong></td>
-<td>周二</td>
-<td><strong>Day 5</strong> 博物馆 · 苏州河 · 收尾 → 傍晚返程</td>
-<td>早晨退房，行李寄存</td>
+<td data-label="日期"><strong>10/6</strong></td>
+<td data-label="星期">周二</td>
+<td data-label="行程"><strong>Day 5</strong> 博物馆 · 苏州河 · 收尾 → 傍晚返程</td>
+<td data-label="住宿">早晨退房，行李寄存</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -280,50 +371,50 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T2-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>预约</td>
-<td>详见下方「预约清单」：朵云书院<strong>提前 7 天 0:00 放号</strong>、自然博物馆<strong>提前 7 天</strong>、上博特展<strong>提前 3–7 天</strong>、豫园国庆<strong>提前 3–7 天</strong>；上博东馆与浦东美术馆已免预约；国庆热门馆仍会秒空</td>
+<td data-label="事项">预约</td>
+<td data-label="说明">详见下方「预约清单」：朵云书院<strong>提前 7 天 0:00 放号</strong>、自然博物馆<strong>提前 7 天</strong>、上博特展<strong>提前 3–7 天</strong>、豫园国庆<strong>提前 3–7 天</strong>；上博东馆与浦东美术馆已免预约；国庆热门馆仍会秒空</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T2-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>住宿</td>
-<td><strong>上海共康智选假日酒店</strong>（宝山区南蕰藻路 9 号，<strong>1 号线呼兰路站 3 号口步行 2 分钟</strong>；与呼玛二村同站，两头跑很方便）——<strong>共订 5 晚（10/1 入住，10/6 早晨退房）</strong></td>
+<td data-label="事项">住宿</td>
+<td data-label="说明"><strong>上海共康智选假日酒店</strong>（宝山区南蕰藻路 9 号，<strong>1 号线呼兰路站 3 号口步行 2 分钟</strong>；与呼玛二村同站，两头跑很方便）——<strong>共订 5 晚（10/1 入住，10/6 早晨退房）</strong></td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T2-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>交通</td>
-<td>地铁为主，支付宝/微信乘车码；轮渡（金陵东路渡口｜东金线 2 元）作为过江彩蛋。<strong>地铁绕路 / 要换乘 2 次以上 → 直接打车</strong>，别硬坐</td>
+<td data-label="事项">交通</td>
+<td data-label="说明">地铁为主，支付宝/微信乘车码；轮渡（金陵东路渡口｜东金线 2 元）作为过江彩蛋。<strong>地铁绕路 / 要换乘 2 次以上 → 直接打车</strong>，别硬坐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T2-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>通勤</td>
-<td>呼兰路站 1 号线<strong>直达</strong>人民广场（约 12 站 / 35 分钟）、衡山路（武康路）、陕西南路（复兴中路）、徐家汇、上海火车站；门到门约 45–55 分钟。去外滩 / 陆家嘴 / 静安 / 新天地需换乘 1 次</td>
+<td data-label="事项">通勤</td>
+<td data-label="说明">呼兰路站 1 号线<strong>直达</strong>人民广场（约 12 站 / 35 分钟）、衡山路（武康路）、陕西南路（复兴中路）、徐家汇、上海火车站；门到门约 45–55 分钟。去外滩 / 陆家嘴 / 静安 / 新天地需换乘 1 次</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T2-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>末班</td>
-<td>1 号线往富锦路方向：人民广场站约 22:55–23:00（到达），呼兰路站约 23:20 前后（以当日公告为准）。夜里玩过头就直接打车，市区回宝山约 40–70 元，深夜 70–100 元</td>
+<td data-label="事项">末班</td>
+<td data-label="说明">1 号线往富锦路方向：人民广场站约 22:55–23:00（到达），呼兰路站约 23:20 前后（以当日公告为准）。夜里玩过头就直接打车，市区回宝山约 40–70 元，深夜 70–100 元</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T2-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>酒吧</td>
-<td>Bar Leone、COA、Speak Low 彼楼排队极长 → 提前电话预定或 18:30 前到店</td>
+<td data-label="事项">酒吧</td>
+<td data-label="说明">Bar Leone、COA、Speak Low 彼楼排队极长 → 提前电话预定或 18:30 前到店</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T2-7">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>装备</td>
-<td>舒适步行鞋（梧桐区 Citywalk 日行 2 万步起步）</td>
+<td data-label="事项">装备</td>
+<td data-label="说明">舒适步行鞋（梧桐区 Citywalk 日行 2 万步起步）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -344,61 +435,61 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T3-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>朵云书院</strong>（上海中心 52F）</td>
-<td><strong>提前 7 天，每天 0:00 放号</strong>（预约通道 7:00–19:00 开放），节假日秒空</td>
-<td>公众号「<strong>世纪朵云</strong>」→ 预约；小程序「<strong>佰朋+</strong>」</td>
-<td>浦东新区银城中路 501 号上海中心大厦 52 层</td>
-<td>Day 1（替换登高时）</td>
+<td data-label="项目"><strong>朵云书院</strong>（上海中心 52F）</td>
+<td data-label="放号时间 / 提前量"><strong>提前 7 天，每天 0:00 放号</strong>（预约通道 7:00–19:00 开放），节假日秒空</td>
+<td data-label="预约入口">公众号「<strong>世纪朵云</strong>」→ 预约；小程序「<strong>佰朋+</strong>」</td>
+<td data-label="地址">浦东新区银城中路 501 号上海中心大厦 52 层</td>
+<td data-label="用在哪天">Day 1（替换登高时）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T3-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>上海自然博物馆</strong></td>
-<td><strong>提前 7 天（含当天）</strong>，放票即抢，周末节假日靠抢</td>
-<td>官网网上售票<a href="https://www.snhm.org.cn/cgfw/wssp.htm" target="_blank" rel="noopener">https://www.snhm.org.cn/cgfw/wssp.htm</a>；小程序「<strong>上海科技馆自然博物馆天文馆</strong>」</td>
-<td>静安区北京西路 510 号（13 号线自然博物馆站）</td>
-<td>Day 5 上午（备选）</td>
+<td data-label="项目"><strong>上海自然博物馆</strong></td>
+<td data-label="放号时间 / 提前量"><strong>提前 7 天（含当天）</strong>，放票即抢，周末节假日靠抢</td>
+<td data-label="预约入口">官网网上售票<a href="https://www.snhm.org.cn/cgfw/wssp.htm" target="_blank" rel="noopener">https://www.snhm.org.cn/cgfw/wssp.htm</a>；小程序「<strong>上海科技馆自然博物馆天文馆</strong>」</td>
+<td data-label="地址">静安区北京西路 510 号（13 号线自然博物馆站）</td>
+<td data-label="用在哪天">Day 5 上午（备选）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T3-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>上博人民广场馆 · 特展</strong>（当前「世界树之巅：美洲古代文明大展」）</td>
-<td>实名分时段购票，<strong>热门时段提前 3–7 天</strong></td>
-<td><a href="https://www.shanghaimuseum.net" target="_blank" rel="noopener">https://www.shanghaimuseum.net</a>；预约页 <a href="https://reservation.shanghaimuseum.net" target="_blank" rel="noopener">https://reservation.shanghaimuseum.net</a>；公众号「上海博物馆」→ GO 上博</td>
-<td>黄浦区人民大道 201 号</td>
-<td>Day 5 上午</td>
+<td data-label="项目"><strong>上博人民广场馆 · 特展</strong>（当前「世界树之巅：美洲古代文明大展」）</td>
+<td data-label="放号时间 / 提前量">实名分时段购票，<strong>热门时段提前 3–7 天</strong></td>
+<td data-label="预约入口"><a href="https://www.shanghaimuseum.net" target="_blank" rel="noopener">https://www.shanghaimuseum.net</a>；预约页 <a href="https://reservation.shanghaimuseum.net" target="_blank" rel="noopener">https://reservation.shanghaimuseum.net</a>；公众号「上海博物馆」→ GO 上博</td>
+<td data-label="地址">黄浦区人民大道 201 号</td>
+<td data-label="用在哪天">Day 5 上午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T3-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>豫园</strong></td>
-<td>平日提前 1–3 天；<strong>国庆 / 灯会提前 3–7 天</strong>（实名分时限量）</td>
-<td>官网<a href="https://www.yugarden.com.cn" target="_blank" rel="noopener">https://www.yugarden.com.cn</a>；公众号「豫园」/「豫园票务」小程序；美团、携程</td>
-<td>黄浦区福佑路 168 号（北门）</td>
-<td>Day 2 上午</td>
+<td data-label="项目"><strong>豫园</strong></td>
+<td data-label="放号时间 / 提前量">平日提前 1–3 天；<strong>国庆 / 灯会提前 3–7 天</strong>（实名分时限量）</td>
+<td data-label="预约入口">官网<a href="https://www.yugarden.com.cn" target="_blank" rel="noopener">https://www.yugarden.com.cn</a>；公众号「豫园」/「豫园票务」小程序；美团、携程</td>
+<td data-label="地址">黄浦区福佑路 168 号（北门）</td>
+<td data-label="用在哪天">Day 2 上午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T3-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>苏州河游船</strong></td>
-<td>提前 3–7 天</td>
-<td>微信小程序「<strong>悠游苏州河</strong>」</td>
-<td>下单页显示码头（外滩源 / 昌平路等）</td>
-<td>Day 4 不出市备选日</td>
+<td data-label="项目"><strong>苏州河游船</strong></td>
+<td data-label="放号时间 / 提前量">提前 3–7 天</td>
+<td data-label="预约入口">微信小程序「<strong>悠游苏州河</strong>」</td>
+<td data-label="地址">下单页显示码头（外滩源 / 昌平路等）</td>
+<td data-label="用在哪天">Day 4 不出市备选日</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T3-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>四行仓库抗战纪念馆</strong></td>
-<td>免费；节假日建议提前约，出行前查公告</td>
-<td>公众号「<strong>四行仓库抗战纪念馆</strong>」</td>
-<td>静安区苏州河北岸，8 / 12 号线曲阜路站步行约 10 分钟</td>
-<td>Day 5 下午</td>
+<td data-label="项目"><strong>四行仓库抗战纪念馆</strong></td>
+<td data-label="放号时间 / 提前量">免费；节假日建议提前约，出行前查公告</td>
+<td data-label="预约入口">公众号「<strong>四行仓库抗战纪念馆</strong>」</td>
+<td data-label="地址">静安区苏州河北岸，8 / 12 号线曲阜路站步行约 10 分钟</td>
+<td data-label="用在哪天">Day 5 下午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -415,37 +506,37 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T4-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>上博东馆</strong></td>
-<td>常设展<strong>免预约</strong>，持身份证原件从 B1 东门刷证入馆（10:00–18:00，17:00 停止入场，周二闭馆）；仅数字馆 / 探索宫需单独约</td>
-<td><a href="https://www.shanghaimuseum.net" target="_blank" rel="noopener">https://www.shanghaimuseum.net</a>（东馆参观页）；公众号「上海博物馆」</td>
-<td>浦东新区世纪大道 1952 号</td>
+<td data-label="项目"><strong>上博东馆</strong></td>
+<td data-label="说明">常设展<strong>免预约</strong>，持身份证原件从 B1 东门刷证入馆（10:00–18:00，17:00 停止入场，周二闭馆）；仅数字馆 / 探索宫需单独约</td>
+<td data-label="购票入口"><a href="https://www.shanghaimuseum.net" target="_blank" rel="noopener">https://www.shanghaimuseum.net</a>（东馆参观页）；公众号「上海博物馆」</td>
+<td data-label="地址">浦东新区世纪大道 1952 号</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T4-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>浦东美术馆</strong></td>
-<td>已取消日常预约，购票即入；热门展建议提前 1–3 天线上买（一票通馆，80 元起）</td>
-<td><a href="https://www.museumofartpd.org.cn/ticketing" target="_blank" rel="noopener">https://www.museumofartpd.org.cn/ticketing</a>；小程序「浦东美术馆」</td>
-<td>浦东新区滨江大道 2777 号</td>
+<td data-label="项目"><strong>浦东美术馆</strong></td>
+<td data-label="说明">已取消日常预约，购票即入；热门展建议提前 1–3 天线上买（一票通馆，80 元起）</td>
+<td data-label="购票入口"><a href="https://www.museumofartpd.org.cn/ticketing" target="_blank" rel="noopener">https://www.museumofartpd.org.cn/ticketing</a>；小程序「浦东美术馆」</td>
+<td data-label="地址">浦东新区滨江大道 2777 号</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T4-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>上海中心 118 层「上海之巅」</strong></td>
-<td>不必预约，线上购票省排队（多数渠道需提前 1 天）</td>
-<td>公众号「上海中心大厦」；携程 / 美团 / Klook</td>
-<td>浦东新区银城中路 501 号</td>
+<td data-label="项目"><strong>上海中心 118 层「上海之巅」</strong></td>
+<td data-label="说明">不必预约，线上购票省排队（多数渠道需提前 1 天）</td>
+<td data-label="购票入口">公众号「上海中心大厦」；携程 / 美团 / Klook</td>
+<td data-label="地址">浦东新区银城中路 501 号</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T4-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>朱家角 / 蟠龙天地</strong></td>
-<td>古镇免费免约；课植园等小景点现场买票</td>
-<td>—</td>
-<td>青浦区（17 号线朱家角站 / 蟠龙路站）</td>
+<td data-label="项目"><strong>朱家角 / 蟠龙天地</strong></td>
+<td data-label="说明">古镇免费免约；课植园等小景点现场买票</td>
+<td data-label="购票入口">—</td>
+<td data-label="地址">青浦区（17 号线朱家角站 / 蟠龙路站）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -463,71 +554,71 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T5-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上海老饭店（Day 2 晚餐）</td>
-<td><strong>提前 3–7 天</strong>，节假日尽早</td>
-<td>大众点评 / 美团搜店名点「订座」，或打门店电话</td>
-<td>黄浦区福佑路（豫园商圈）</td>
-<td>全程最该先订的一顿</td>
+<td data-label="餐厅">上海老饭店（Day 2 晚餐）</td>
+<td data-label="何时订"><strong>提前 3–7 天</strong>，节假日尽早</td>
+<td data-label="订位方式">大众点评 / 美团搜店名点「订座」，或打门店电话</td>
+<td data-label="地址">黄浦区福佑路（豫园商圈）</td>
+<td data-label="备注">全程最该先订的一顿</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T5-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>丽思卡尔顿 Flair Rooftop（Day 1 晚餐）</td>
-<td><strong>提前 3–7 天</strong></td>
-<td>酒店官网 / 电话，或点评订座</td>
-<td>浦东新区世纪大道 8 号国金中心 IFC，58 层</td>
-<td>订位时注明要「露台位」；<strong>露台位低消 2488 元 / 桌（非人均）</strong></td>
+<td data-label="餐厅">丽思卡尔顿 Flair Rooftop（Day 1 晚餐）</td>
+<td data-label="何时订"><strong>提前 3–7 天</strong></td>
+<td data-label="订位方式">酒店官网 / 电话，或点评订座</td>
+<td data-label="地址">浦东新区世纪大道 8 号国金中心 IFC，58 层</td>
+<td data-label="备注">订位时注明要「露台位」；<strong>露台位低消 2488 元 / 桌（非人均）</strong></td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T5-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>绿波廊（Day 2 中餐）</td>
-<td>提前 1–3 天</td>
-<td>点评 / 电话</td>
-<td>黄浦区豫园商城内</td>
-<td>八宝鸭建议电话问是否需预留下单</td>
+<td data-label="餐厅">绿波廊（Day 2 中餐）</td>
+<td data-label="何时订">提前 1–3 天</td>
+<td data-label="订位方式">点评 / 电话</td>
+<td data-label="地址">黄浦区豫园商城内</td>
+<td data-label="备注">八宝鸭建议电话问是否需预留下单</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T5-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>老正兴（Day 4 晚餐）</td>
-<td>提前 1–2 天</td>
-<td>点评 / 电话</td>
-<td>黄浦区福州路一带</td>
-<td>周末务必订</td>
+<td data-label="餐厅">老正兴（Day 4 晚餐）</td>
+<td data-label="何时订">提前 1–2 天</td>
+<td data-label="订位方式">点评 / 电话</td>
+<td data-label="地址">黄浦区福州路一带</td>
+<td data-label="备注">周末务必订</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T5-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>茂隆 / 兰心（Day 3 中餐）</td>
-<td>提前 1–2 天</td>
-<td>点评 / 电话</td>
-<td>黄浦区进贤路</td>
-<td>周末务必订</td>
+<td data-label="餐厅">茂隆 / 兰心（Day 3 中餐）</td>
+<td data-label="何时订">提前 1–2 天</td>
+<td data-label="订位方式">点评 / 电话</td>
+<td data-label="地址">黄浦区进贤路</td>
+<td data-label="备注">周末务必订</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T5-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>名厨本帮菜 / 我家餐厅</td>
-<td>提前 1–2 天</td>
-<td>点评 / 电话</td>
-<td>以点评页为准</td>
-<td>确定替换再订</td>
+<td data-label="餐厅">名厨本帮菜 / 我家餐厅</td>
+<td data-label="何时订">提前 1–2 天</td>
+<td data-label="订位方式">点评 / 电话</td>
+<td data-label="地址">以点评页为准</td>
+<td data-label="备注">确定替换再订</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T5-7">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>福和慧 / 泰安门 / 乔尔·卢布松</td>
-<td>提前 1–2 周</td>
-<td>官方渠道 / 点评订座，常需预付定金</td>
-<td>以点评页为准</td>
-<td>只在真要加这顿时才订</td>
+<td data-label="餐厅">福和慧 / 泰安门 / 乔尔·卢布松</td>
+<td data-label="何时订">提前 1–2 周</td>
+<td data-label="订位方式">官方渠道 / 点评订座，常需预付定金</td>
+<td data-label="地址">以点评页为准</td>
+<td data-label="备注">只在真要加这顿时才订</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="7"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -545,43 +636,43 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T6-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>🔴 <strong>9/29（今天）</strong></td>
-<td><strong>上海自然博物馆 10/6 场</strong>（提前 7 天，0:00 已放号 → 立刻抢）；<strong>上博人民广场特展 10/6 场</strong>（提前 3–7 天，已进入放号窗口 → 盯着抢）；<strong>订 Flair Rooftop 10/2 晚餐</strong>（露台位低消 2488）；<strong>订 上海老饭店 10/3 晚餐</strong></td>
+<td data-label="日期">🔴 <strong>9/29（今天）</strong></td>
+<td data-label="要做的事"><strong>上海自然博物馆 10/6 场</strong>（提前 7 天，0:00 已放号 → 立刻抢）；<strong>上博人民广场特展 10/6 场</strong>（提前 3–7 天，已进入放号窗口 → 盯着抢）；<strong>订 Flair Rooftop 10/2 晚餐</strong>（露台位低消 2488）；<strong>订 上海老饭店 10/3 晚餐</strong></td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T6-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>🔴 <strong>9/30</strong></td>
-<td><strong>豫园 10/3 场</strong>（国庆需提前 3–7 天，实名分时限量）；<strong>上海中心 118 层 / 浦东美术馆</strong>（多数渠道需提前 1 天出票）；绿波廊 10/3 中餐（提前 1–3 天）</td>
+<td data-label="日期">🔴 <strong>9/30</strong></td>
+<td data-label="要做的事"><strong>豫园 10/3 场</strong>（国庆需提前 3–7 天，实名分时限量）；<strong>上海中心 118 层 / 浦东美术馆</strong>（多数渠道需提前 1 天出票）；绿波廊 10/3 中餐（提前 1–3 天）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T6-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>10/1（抵达日）</strong></td>
-<td>白天确认上海中心票已出票；<strong>订 茂隆 / 兰心 10/4 中餐</strong>（提前 1–2 天）；<strong>朵云书院 10/2 场持续刷退票</strong>，刷不到就改上海中心 / 环球港登高</td>
+<td data-label="日期"><strong>10/1（抵达日）</strong></td>
+<td data-label="要做的事">白天确认上海中心票已出票；<strong>订 茂隆 / 兰心 10/4 中餐</strong>（提前 1–2 天）；<strong>朵云书院 10/2 场持续刷退票</strong>，刷不到就改上海中心 / 环球港登高</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T6-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>10/2（Day 1）</strong></td>
-<td>早上电话确认当晚 Flair、次日绿波廊与上海老饭店；顺手订 <strong>老正兴 10/5 晚餐</strong>（提前 1–2 天）</td>
+<td data-label="日期"><strong>10/2（Day 1）</strong></td>
+<td data-label="要做的事">早上电话确认当晚 Flair、次日绿波廊与上海老饭店；顺手订 <strong>老正兴 10/5 晚餐</strong>（提前 1–2 天）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T6-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>10/3（Day 2）</strong></td>
-<td>订 <strong>四行仓库 10/6</strong>（节假日建议提前约）；看 10/5 天气决定朱家角还是「不出市备选日」</td>
+<td data-label="日期"><strong>10/3（Day 2）</strong></td>
+<td data-label="要做的事">订 <strong>四行仓库 10/6</strong>（节假日建议提前约）；看 10/5 天气决定朱家角还是「不出市备选日」</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T6-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>10/5（Day 4）</strong></td>
-<td>电话确认四行仓库 + 10/6 上午场馆；若走备选日则订苏州河游船</td>
+<td data-label="日期"><strong>10/5（Day 4）</strong></td>
+<td data-label="要做的事">电话确认四行仓库 + 10/6 上午场馆；若走备选日则订苏州河游船</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -608,29 +699,29 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T7-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>抵达</td>
-<td>机场 / 火车站 → <strong>1 号线直达呼兰路站</strong>（上海火车站、人民广场均可 1 号线直达；虹桥 / 浦东机场需换乘 1 次，<strong>深夜拖行李建议直接打车</strong>，市区回宝山 40–70 元）</td>
+<td data-label="时间">抵达</td>
+<td data-label="安排">机场 / 火车站 → <strong>1 号线直达呼兰路站</strong>（上海火车站、人民广场均可 1 号线直达；虹桥 / 浦东机场需换乘 1 次，<strong>深夜拖行李建议直接打车</strong>，市区回宝山 40–70 元）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T7-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>入住</td>
-<td>上海共康智选假日酒店（南蕰藻路 9 号，呼兰路站 3 号口步行 2 分钟）；<strong>确认 5 晚（10/1–10/5）、10/6 早晨退房</strong></td>
+<td data-label="时间">入住</td>
+<td data-label="安排">上海共康智选假日酒店（南蕰藻路 9 号，呼兰路站 3 号口步行 2 分钟）；<strong>确认 5 晚（10/1–10/5）、10/6 早晨退房</strong></td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T7-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>宵夜</td>
-<td>◎<strong>彭浦一炸</strong>（1 号线彭浦新村站，回酒店顺路）／◎<strong>胖叔叔铁板烧烤摊</strong>（波阳创业园店）；懒得跑就酒店周边简餐</td>
+<td data-label="时间">宵夜</td>
+<td data-label="安排">◎<strong>彭浦一炸</strong>（1 号线彭浦新村站，回酒店顺路）／◎<strong>胖叔叔铁板烧烤摊</strong>（波阳创业园店）；懒得跑就酒店周边简餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T7-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>睡前</td>
-<td>复核次日：朵云书院是否刷到退票、上海中心票是否出票、Flair 10/2 订位是否确认</td>
+<td data-label="时间">睡前</td>
+<td data-label="安排">复核次日：朵云书院是否刷到退票、上海中心票是否出票、Flair 10/2 订位是否确认</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -657,36 +748,36 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T8-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上午</td>
-<td>从酒店出发（呼兰路站 1 号线<strong>直达</strong>人民广场，门到门约 50 分钟）。南京路步行街热身，沈大成（南京路）买条头糕、双酿团、定胜糕当早餐</td>
+<td data-label="时间">上午</td>
+<td data-label="安排">从酒店出发（呼兰路站 1 号线<strong>直达</strong>人民广场，门到门约 50 分钟）。南京路步行街热身，沈大成（南京路）买条头糕、双酿团、定胜糕当早餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T8-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>中午</td>
-<td>黄河路美食街（本地人价、避开景区溢价，人民广场北侧步行可达）：沿街本帮小馆、海派点心自选◎想换面 →<strong>永丰面馆（汉口路店）</strong>：60 多年老面馆，2024 必比登，红烧牛肉面 / 五香牛舌面（就在人民广场侧，顺路）</td>
+<td data-label="时间">中午</td>
+<td data-label="安排">黄河路美食街（本地人价、避开景区溢价，人民广场北侧步行可达）：沿街本帮小馆、海派点心自选◎想换面 →<strong>永丰面馆（汉口路店）</strong>：60 多年老面馆，2024 必比登，红烧牛肉面 / 五香牛舌面（就在人民广场侧，顺路）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T8-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>下午</td>
-<td>外滩万国建筑博览群 → 外白渡桥、乍浦路桥（经典拍照机位）→ 邮政博物馆（苏州河口，免费）</td>
+<td data-label="时间">下午</td>
+<td data-label="安排">外滩万国建筑博览群 → 外白渡桥、乍浦路桥（经典拍照机位）→ 邮政博物馆（苏州河口，免费）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T8-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>傍晚</td>
-<td>金陵东路渡口乘东金线 2 元轮渡横渡黄浦江（日落时段最佳）</td>
+<td data-label="时间">傍晚</td>
+<td data-label="安排">金陵东路渡口乘东金线 2 元轮渡横渡黄浦江（日落时段最佳）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T8-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>夜</td>
-<td>陆家嘴三件套（上海中心 / 环球金融 / 金茂）登高看夜景 + 浦东美术馆外景；晚餐：丽思卡尔顿 Flair Rooftop（露台位俯瞰外滩璀璨灯火，需订位）或简单版 —— 陆家嘴滨江散步</td>
+<td data-label="时间">夜</td>
+<td data-label="安排">陆家嘴三件套（上海中心 / 环球金融 / 金茂）登高看夜景 + 浦东美术馆外景；晚餐：丽思卡尔顿 Flair Rooftop（露台位俯瞰外滩璀璨灯火，需订位）或简单版 —— 陆家嘴滨江散步</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -721,43 +812,43 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T9-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上午</td>
-<td>豫园（400 年古典园林，需预约）、九曲桥、豫园商城；500 米半径免费延伸——古城公园</td>
+<td data-label="时间">上午</td>
+<td data-label="安排">豫园（400 年古典园林，需预约）、九曲桥、豫园商城；500 米半径免费延伸——古城公园</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T9-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>中餐</td>
-<td>绿波廊（豫园店）：桂花拉糕、八宝鸭、香糟荠菜烩黄鱼、春韭蟹菇炒鳝背或南翔馒头店（蟹粉小笼）—— 豫园商城小吃属游客价，浅尝即可</td>
+<td data-label="时间">中餐</td>
+<td data-label="安排">绿波廊（豫园店）：桂花拉糕、八宝鸭、香糟荠菜烩黄鱼、春韭蟹菇炒鳝背或南翔馒头店（蟹粉小笼）—— 豫园商城小吃属游客价，浅尝即可</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T9-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>下午</td>
-<td>田子坊（石库门弄堂创意市集）→ 新天地（石库门街区）→ 思南公馆（复兴中路老洋房群，正好串联当晚酒吧）</td>
+<td data-label="时间">下午</td>
+<td data-label="安排">田子坊（石库门弄堂创意市集）→ 新天地（石库门街区）→ 思南公馆（复兴中路老洋房群，正好串联当晚酒吧）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T9-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>晚餐</td>
-<td>★<strong>上海老饭店</strong>（福佑路，国家级非遗本帮菜，三份清单均上榜）或和记小菜（亲民）：桂花红烧肉、糖醋小排、响油鳝丝、熏鱼、糟卤拼盘◎升级选项：<strong>名厨本帮菜</strong>（本帮菜泰斗李伯荣关门弟子主理）/ <strong>我家餐厅</strong>（宝藏社区小馆，注意部分菜品口碑两极）</td>
+<td data-label="时间">晚餐</td>
+<td data-label="安排">★<strong>上海老饭店</strong>（福佑路，国家级非遗本帮菜，三份清单均上榜）或和记小菜（亲民）：桂花红烧肉、糖醋小排、响油鳝丝、熏鱼、糟卤拼盘◎升级选项：<strong>名厨本帮菜</strong>（本帮菜泰斗李伯荣关门弟子主理）/ <strong>我家餐厅</strong>（宝藏社区小馆，注意部分菜品口碑两极）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T9-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>夜</td>
-<td>复兴中路「酒吧三连」步行可达：①<strong>Bar Leone</strong>（复兴中路 527 号）无花果叶尼格罗尼、烟熏橄榄马提尼② <strong>COA</strong>（复兴中路 580 弄）COCONUT MILK PUNCH，四楼龙舌兰品鉴空间③ <strong>Speak Low 彼楼</strong>（复兴中路 579 号）找暗门，二楼移动调酒台</td>
+<td data-label="时间">夜</td>
+<td data-label="安排">复兴中路「酒吧三连」步行可达：①<strong>Bar Leone</strong>（复兴中路 527 号）无花果叶尼格罗尼、烟熏橄榄马提尼② <strong>COA</strong>（复兴中路 580 弄）COCONUT MILK PUNCH，四楼龙舌兰品鉴空间③ <strong>Speak Low 彼楼</strong>（复兴中路 579 号）找暗门，二楼移动调酒台</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T9-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>备选</td>
-<td>Asian Flush（复兴中路 592-甲）Durian Grey Gimlet；Sober Company（新天地）</td>
+<td data-label="时间">备选</td>
+<td data-label="安排">Asian Flush（复兴中路 592-甲）Durian Grey Gimlet；Sober Company（新天地）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -784,43 +875,43 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T10-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上午</td>
-<td><strong>武康路精华段</strong>（一早人少好拍照）：武康大楼 → 武康庭 → 巴金故居，约 1.2 km，纯走 20 分钟，边逛边停约 1 小时 → <strong>咖啡歇脚</strong>（武康庭内或沿街任选，别硬走）→ <strong>安福路</strong>（话剧中心、多抓鱼、买手店，约 1 km）⚠ 两段连走约 2.5–3 km：纯走路 40 分钟，实际边逛边停 2–2.5 小时。体力一般就<strong>只走武康路，安福路降级为可选</strong></td>
+<td data-label="时间">上午</td>
+<td data-label="安排"><strong>武康路精华段</strong>（一早人少好拍照）：武康大楼 → 武康庭 → 巴金故居，约 1.2 km，纯走 20 分钟，边逛边停约 1 小时 → <strong>咖啡歇脚</strong>（武康庭内或沿街任选，别硬走）→ <strong>安福路</strong>（话剧中心、多抓鱼、买手店，约 1 km）⚠ 两段连走约 2.5–3 km：纯走路 40 分钟，实际边逛边停 2–2.5 小时。体力一般就<strong>只走武康路，安福路降级为可选</strong></td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T10-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>中餐</td>
-<td>进贤路双选：茂隆餐厅（1989 年老牌、米其林推荐）或兰心餐厅（必比登，红烧肉、响油鳝丝）；想吃面 → ★<strong>德兴馆</strong>（百年老店 + 米其林推荐，焖蹄 / 焖肉、熏鱼，浇头可选猪肝面、鳝糊面、大排面、葱油拌面）◎其他面线：<strong>沪西老弄堂</strong>（本帮面热度最高的代表之一）、春和面馆、<strong>知福里面馆</strong>（麻酱拌面）、<strong>小陶面馆</strong>（米其林面馆）</td>
+<td data-label="时间">中餐</td>
+<td data-label="安排">进贤路双选：茂隆餐厅（1989 年老牌、米其林推荐）或兰心餐厅（必比登，红烧肉、响油鳝丝）；想吃面 → ★<strong>德兴馆</strong>（百年老店 + 米其林推荐，焖蹄 / 焖肉、熏鱼，浇头可选猪肝面、鳝糊面、大排面、葱油拌面）◎其他面线：<strong>沪西老弄堂</strong>（本帮面热度最高的代表之一）、春和面馆、<strong>知福里面馆</strong>（麻酱拌面）、<strong>小陶面馆</strong>（米其林面馆）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T10-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>下午</td>
-<td>徐家汇书院（未来感图书馆，观景露台俯瞰天主教堂）+ 徐家汇天主堂 → 地铁约 25 分钟转场<strong>徐汇滨江</strong>（十公里岸线，江景散步 / 攀岩 / 滑板；有余力可进<strong>西岸美术馆 + 穹顶艺术中心</strong>）→ 北上 <strong>静安寺</strong> + 对面的 <strong>静安公园</strong>（免费，逛完可在久光 / 嘉里中心歇脚）</td>
+<td data-label="时间">下午</td>
+<td data-label="安排">徐家汇书院（未来感图书馆，观景露台俯瞰天主教堂）+ 徐家汇天主堂 → 地铁约 25 分钟转场<strong>徐汇滨江</strong>（十公里岸线，江景散步 / 攀岩 / 滑板；有余力可进<strong>西岸美术馆 + 穹顶艺术中心</strong>）→ 北上 <strong>静安寺</strong> + 对面的 <strong>静安公园</strong>（免费，逛完可在久光 / 嘉里中心歇脚）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T10-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>傍晚</td>
-<td>静安公园 → 南京西路商圈、星巴克臻选烘焙工坊；伴手礼：哈尔滨食品厂蝴蝶酥</td>
+<td data-label="时间">傍晚</td>
+<td data-label="安排">静安公园 → 南京西路商圈、星巴克臻选烘焙工坊；伴手礼：哈尔滨食品厂蝴蝶酥</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T10-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>晚餐</td>
-<td>风味换口味：伊祥·敦煌楼（牛肉面）／宁夏印象·盐池滩羊肉（烤羊排）／金湘隆·清派湘菜（鸳鸯鱼头王）／红子鸡凤凰楼（脆皮鸡）◎其他风味：<strong>三清潭</strong>（黑珍珠烧鹅）、<strong>鹅佬柒铺</strong>（平价烧腊）、<strong>红房子西菜馆</strong>（中国四大西餐厅之一，体验海派西餐历史）、<strong>聚黔庄</strong>（贵州菜）、<strong>泉仔</strong>（闽南小吃）、<strong>福悦捞化</strong>（福州小吃）、<strong>鑼獅</strong>（螺蛳粉）</td>
+<td data-label="时间">晚餐</td>
+<td data-label="安排">风味换口味：伊祥·敦煌楼（牛肉面）／宁夏印象·盐池滩羊肉（烤羊排）／金湘隆·清派湘菜（鸳鸯鱼头王）／红子鸡凤凰楼（脆皮鸡）◎其他风味：<strong>三清潭</strong>（黑珍珠烧鹅）、<strong>鹅佬柒铺</strong>（平价烧腊）、<strong>红房子西菜馆</strong>（中国四大西餐厅之一，体验海派西餐历史）、<strong>聚黔庄</strong>（贵州菜）、<strong>泉仔</strong>（闽南小吃）、<strong>福悦捞化</strong>（福州小吃）、<strong>鑼獅</strong>（螺蛳粉）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T10-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>夜</td>
-<td>静安小酒馆线：Lab whisky&amp;cocktail（武定路 1093 号，曾获年度必喝酒吧）→ Revo（延平路 98 号，拉丁风格兼舞厅）或安静派：Bar No.3（兴国路老洋房）、Wooden Paradise（长乐路）、撸酱（黑胶爵士）</td>
+<td data-label="时间">夜</td>
+<td data-label="安排">静安小酒馆线：Lab whisky&amp;cocktail（武定路 1093 号，曾获年度必喝酒吧）→ Revo（延平路 98 号，拉丁风格兼舞厅）或安静派：Bar No.3（兴国路老洋房）、Wooden Paradise（长乐路）、撸酱（黑胶爵士）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -866,43 +957,43 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T11-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上午</td>
-<td><strong>从酒店出发</strong>：打车直达约 50–70 分钟（推荐，地铁要绕）；或 1 号线 → 2 号线虹桥火车站 → 17 号线朱家角站，约 1.5–2 小时。沪版水乡：明清建筑、放生桥、摇橹船，慢逛 3–4 小时</td>
+<td data-label="时间">上午</td>
+<td data-label="安排"><strong>从酒店出发</strong>：打车直达约 50–70 分钟（推荐，地铁要绕）；或 1 号线 → 2 号线虹桥火车站 → 17 号线朱家角站，约 1.5–2 小时。沪版水乡：明清建筑、放生桥、摇橹船，慢逛 3–4 小时</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T11-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>中餐</td>
-<td>古镇内本地小馆：扎肉、阿婆粽、河鲜；避开主街最贵的几家</td>
+<td data-label="时间">中餐</td>
+<td data-label="安排">古镇内本地小馆：扎肉、阿婆粽、河鲜；避开主街最贵的几家</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T11-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>下午</td>
-<td>转场蟠龙天地（同在青浦，17 号线蟠龙路站，返程顺路）：新江南水乡商业街区，滨水步道 + 咖啡，节奏放松</td>
+<td data-label="时间">下午</td>
+<td data-label="安排">转场蟠龙天地（同在青浦，17 号线蟠龙路站，返程顺路）：新江南水乡商业街区，滨水步道 + 咖啡，节奏放松</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T11-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>傍晚</td>
-<td>返回宝山（17 号线 → 虹桥火车站换 2 号线 → 人民广场换 1 号线，约 1.5–2 小时；<strong>累了就直接打车，约 60–90 元</strong>）</td>
+<td data-label="时间">傍晚</td>
+<td data-label="安排">返回宝山（17 号线 → 虹桥火车站换 2 号线 → 人民广场换 1 号线，约 1.5–2 小时；<strong>累了就直接打车，约 60–90 元</strong>）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T11-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>晚餐</td>
-<td>补一顿正经本帮：老正兴（油爆虾、响油鳝丝、草头圈子）或 兰心 / 茂隆（进贤路）</td>
+<td data-label="时间">晚餐</td>
+<td data-label="安排">补一顿正经本帮：老正兴（油爆虾、响油鳝丝、草头圈子）或 兰心 / 茂隆（进贤路）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T11-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>夜</td>
-<td>想热闹：INS 新乐园（多层综合，Hip-hop / Kpop / Live）、Hood（纯 Hip-hop）、Max（EDM/Bounce）想安静：Swirl（葡萄酒 + 创意调酒）或 撸酱（黑胶爵士）</td>
+<td data-label="时间">夜</td>
+<td data-label="安排">想热闹：INS 新乐园（多层综合，Hip-hop / Kpop / Live）、Hood（纯 Hip-hop）、Max（EDM/Bounce）想安静：Swirl（葡萄酒 + 创意调酒）或 撸酱（黑胶爵士）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -935,36 +1026,36 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T12-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上午</td>
-<td><strong>上博（东馆常设 / 人民广场特展二选一）</strong> 或 <strong>上海自然博物馆</strong>（提前 7 天实名购票）；两者都想看则本日放弃其次项。上博东馆（浦东世纪大道 1952 号）常设展免费<strong>免预约</strong>，刷身份证入馆（10:00–18:00，周二闭馆）；⚠ 人民广场馆已改为大型特展馆（当前「世界树之巅：美洲古代文明大展」，需实名购票预约），要看青铜 / 陶瓷 / 书画常设请去东馆</td>
+<td data-label="时间">上午</td>
+<td data-label="安排"><strong>上博（东馆常设 / 人民广场特展二选一）</strong> 或 <strong>上海自然博物馆</strong>（提前 7 天实名购票）；两者都想看则本日放弃其次项。上博东馆（浦东世纪大道 1952 号）常设展免费<strong>免预约</strong>，刷身份证入馆（10:00–18:00，周二闭馆）；⚠ 人民广场馆已改为大型特展馆（当前「世界树之巅：美洲古代文明大展」，需实名购票预约），要看青铜 / 陶瓷 / 书画常设请去东馆</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T12-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>早餐</td>
-<td>◎<strong>君溢面馆</strong>（5 元一碗的特色面，只做早/午餐时段，务必早去）—— 或 ◎<strong>美味嘉老上海双档</strong>（双档汤、绿豆汤，老上海早点）</td>
+<td data-label="时间">早餐</td>
+<td data-label="安排">◎<strong>君溢面馆</strong>（5 元一碗的特色面，只做早/午餐时段，务必早去）—— 或 ◎<strong>美味嘉老上海双档</strong>（双档汤、绿豆汤，老上海早点）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T12-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>中午</td>
-<td>最后一碗本帮面馆：莱莱小笼（蟹粉鲜肉小笼）、★<strong>大壶春</strong>（四川中路，清水派生煎，褶子朝上，必比登推荐，三份清单均上榜）、舒蔡记（生煎 + 小馄饨）；来不及则路上顺手带：海棠糕、萝卜丝饼、粢饭团、葱油饼</td>
+<td data-label="时间">中午</td>
+<td data-label="安排">最后一碗本帮面馆：莱莱小笼（蟹粉鲜肉小笼）、★<strong>大壶春</strong>（四川中路，清水派生煎，褶子朝上，必比登推荐，三份清单均上榜）、舒蔡记（生煎 + 小馄饨）；来不及则路上顺手带：海棠糕、萝卜丝饼、粢饭团、葱油饼</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T12-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>下午</td>
-<td>四行仓库抗战纪念馆 → M50 创意园（苏州河畔涂鸦艺术区）→ 可选 天安千树（糖水市集）或改线：西岸艺术区（西岸美术馆 + 穹顶艺术中心）→ 龙华寺 + 龙华滨江（徐汇滨江已移至 Day 3 下午）</td>
+<td data-label="时间">下午</td>
+<td data-label="安排">四行仓库抗战纪念馆 → M50 创意园（苏州河畔涂鸦艺术区）→ 可选 天安千树（糖水市集）或改线：西岸艺术区（西岸美术馆 + 穹顶艺术中心）→ 龙华寺 + 龙华滨江（徐汇滨江已移至 Day 3 下午）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T12-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>傍晚</td>
-<td>回酒店取行李，返程（龙华 / 西岸一带无 1 号线，<strong>直接打车</strong>回呼兰路最省事；若在人民广场附近收尾则 1 号线直达）</td>
+<td data-label="时间">傍晚</td>
+<td data-label="安排">回酒店取行李，返程（龙华 / 西岸一带无 1 号线，<strong>直接打车</strong>回呼兰路最省事；若在人民广场附近收尾则 1 号线直达）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -983,89 +1074,89 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T13-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★★ 上海老饭店（福佑路）</td>
-<td>国家级非遗本帮菜：桂花红烧肉、糖醋小排、响油鳝丝、熏鱼、糟卤拼盘</td>
-<td>★ Day 2 晚餐</td>
+<td data-label="餐厅">★★ 上海老饭店（福佑路）</td>
+<td data-label="招牌 / 说明">国家级非遗本帮菜：桂花红烧肉、糖醋小排、响油鳝丝、熏鱼、糟卤拼盘</td>
+<td data-label="状态">★ Day 2 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T13-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★★ 绿波廊（豫园店）</td>
-<td>桂花拉糕、八宝鸭、香糟荠菜烩黄鱼、春韭蟹菇炒鳝背</td>
-<td>★ Day 2 中餐</td>
+<td data-label="餐厅">★★ 绿波廊（豫园店）</td>
+<td data-label="招牌 / 说明">桂花拉糕、八宝鸭、香糟荠菜烩黄鱼、春韭蟹菇炒鳝背</td>
+<td data-label="状态">★ Day 2 中餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T13-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 老正兴</td>
-<td>油爆虾、响油鳝丝、草头圈子</td>
-<td>★ Day 4 晚餐</td>
+<td data-label="餐厅">★ 老正兴</td>
+<td data-label="招牌 / 说明">油爆虾、响油鳝丝、草头圈子</td>
+<td data-label="状态">★ Day 4 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T13-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 茂隆餐厅（进贤路）</td>
-<td>1989 年老牌、米其林推荐</td>
-<td>★ Day 3 中餐；也可替换 Day 4 晚餐</td>
+<td data-label="餐厅">★ 茂隆餐厅（进贤路）</td>
+<td data-label="招牌 / 说明">1989 年老牌、米其林推荐</td>
+<td data-label="状态">★ Day 3 中餐；也可替换 Day 4 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T13-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 兰心餐厅（进贤路）</td>
-<td>必比登，红烧肉、响油鳝丝</td>
-<td>★ Day 3 中餐；也可替换 Day 4 晚餐</td>
+<td data-label="餐厅">★ 兰心餐厅（进贤路）</td>
+<td data-label="招牌 / 说明">必比登，红烧肉、响油鳝丝</td>
+<td data-label="状态">★ Day 3 中餐；也可替换 Day 4 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T13-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 和记小菜</td>
-<td>亲民本帮，上海老饭店的平价版</td>
-<td>★ Day 2 晚餐（平价替代）</td>
+<td data-label="餐厅">★ 和记小菜</td>
+<td data-label="招牌 / 说明">亲民本帮，上海老饭店的平价版</td>
+<td data-label="状态">★ Day 2 晚餐（平价替代）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T13-7">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 名厨本帮菜</td>
-<td>本帮泰斗李伯荣关门弟子主理</td>
-<td>可替换 Day 2 晚餐 / Day 4 晚餐</td>
+<td data-label="餐厅">◎ 名厨本帮菜</td>
+<td data-label="招牌 / 说明">本帮泰斗李伯荣关门弟子主理</td>
+<td data-label="状态">可替换 Day 2 晚餐 / Day 4 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T13-8">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 我家餐厅</td>
-<td>宝藏社区小馆，部分菜品口碑两极</td>
-<td>可替换 Day 2 晚餐 / Day 4 晚餐</td>
+<td data-label="餐厅">◎ 我家餐厅</td>
+<td data-label="招牌 / 说明">宝藏社区小馆，部分菜品口碑两极</td>
+<td data-label="状态">可替换 Day 2 晚餐 / Day 4 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T13-9">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 旧款宁波饭店</td>
-<td>本帮</td>
-<td>可替换 Day 2 晚餐 / Day 4 晚餐</td>
+<td data-label="餐厅">◎ 旧款宁波饭店</td>
+<td data-label="招牌 / 说明">本帮</td>
+<td data-label="状态">可替换 Day 2 晚餐 / Day 4 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T13-10">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 功德林</td>
-<td>老字号素食</td>
-<td>可替换 Day 2 晚餐（不吃肉时）</td>
+<td data-label="餐厅">◎ 功德林</td>
+<td data-label="招牌 / 说明">老字号素食</td>
+<td data-label="状态">可替换 Day 2 晚餐（不吃肉时）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T13-11">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>沧浪亭盛兴汤圆</td>
-<td>现磨馅心</td>
-<td>可替换 Day 5 中午（点心位）</td>
+<td data-label="餐厅">沧浪亭盛兴汤圆</td>
+<td data-label="招牌 / 说明">现磨馅心</td>
+<td data-label="状态">可替换 Day 5 中午（点心位）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1081,153 +1172,153 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T14-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★★ 德兴馆</td>
-<td>百年老店 + 米其林，焖蹄 / 焖肉、熏鱼；浇头：猪肝面、鳝糊面、大排面、葱油拌面</td>
-<td>★ Day 3 中餐</td>
+<td data-label="餐厅">★★ 德兴馆</td>
+<td data-label="招牌 / 说明">百年老店 + 米其林，焖蹄 / 焖肉、熏鱼；浇头：猪肝面、鳝糊面、大排面、葱油拌面</td>
+<td data-label="状态">★ Day 3 中餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★★ 大壶春（四川中路）</td>
-<td>清水派生煎，褶子朝上，必比登</td>
-<td>★ Day 5 中午</td>
+<td data-label="餐厅">★★ 大壶春（四川中路）</td>
+<td data-label="招牌 / 说明">清水派生煎，褶子朝上，必比登</td>
+<td data-label="状态">★ Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★★ 南翔馒头店</td>
-<td>蟹粉小笼</td>
-<td>★ Day 2 中餐</td>
+<td data-label="餐厅">★★ 南翔馒头店</td>
+<td data-label="招牌 / 说明">蟹粉小笼</td>
+<td data-label="状态">★ Day 2 中餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★◎ 永丰面馆（汉口路店）</td>
-<td>60 多年老面馆，2024 必比登：红烧牛肉面 / 五香牛舌面</td>
-<td>★ Day 1 中午（黄河路换面选项）</td>
+<td data-label="餐厅">★◎ 永丰面馆（汉口路店）</td>
+<td data-label="招牌 / 说明">60 多年老面馆，2024 必比登：红烧牛肉面 / 五香牛舌面</td>
+<td data-label="状态">★ Day 1 中午（黄河路换面选项）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 莱莱小笼</td>
-<td>蟹粉鲜肉小笼</td>
-<td>★ Day 5 中午</td>
+<td data-label="餐厅">★ 莱莱小笼</td>
+<td data-label="招牌 / 说明">蟹粉鲜肉小笼</td>
+<td data-label="状态">★ Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 舒蔡记</td>
-<td>生煎 + 小馄饨</td>
-<td>★ Day 5 中午</td>
+<td data-label="餐厅">★ 舒蔡记</td>
+<td data-label="招牌 / 说明">生煎 + 小馄饨</td>
+<td data-label="状态">★ Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-7">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★◎ 君溢面馆</td>
-<td>5 元一碗的特色面 ⚠ 只做早 / 午市，务必早去</td>
-<td>★ Day 5 早餐</td>
+<td data-label="餐厅">★◎ 君溢面馆</td>
+<td data-label="招牌 / 说明">5 元一碗的特色面 ⚠ 只做早 / 午市，务必早去</td>
+<td data-label="状态">★ Day 5 早餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-8">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★◎ 美味嘉老上海双档</td>
-<td>双档汤、绿豆汤，老上海早点</td>
-<td>★ Day 5 早餐（备选）</td>
+<td data-label="餐厅">★◎ 美味嘉老上海双档</td>
+<td data-label="招牌 / 说明">双档汤、绿豆汤，老上海早点</td>
+<td data-label="状态">★ Day 5 早餐（备选）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-9">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 沪西老弄堂</td>
-<td>本帮面热度最高的代表之一</td>
-<td>可替换 Day 3 中餐</td>
+<td data-label="餐厅">◎ 沪西老弄堂</td>
+<td data-label="招牌 / 说明">本帮面热度最高的代表之一</td>
+<td data-label="状态">可替换 Day 3 中餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-10">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>春和面馆</td>
-<td>本帮面</td>
-<td>可替换 Day 3 中餐</td>
+<td data-label="餐厅">春和面馆</td>
+<td data-label="招牌 / 说明">本帮面</td>
+<td data-label="状态">可替换 Day 3 中餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-11">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 知福里面馆</td>
-<td>麻酱拌面</td>
-<td>可替换 Day 3 中餐</td>
+<td data-label="餐厅">◎ 知福里面馆</td>
+<td data-label="招牌 / 说明">麻酱拌面</td>
+<td data-label="状态">可替换 Day 3 中餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-12">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 小陶面馆</td>
-<td>米其林面馆</td>
-<td>可替换 Day 3 中餐</td>
+<td data-label="餐厅">◎ 小陶面馆</td>
+<td data-label="招牌 / 说明">米其林面馆</td>
+<td data-label="状态">可替换 Day 3 中餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-13">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 金强牛肉面</td>
-<td>牛肉拌面</td>
-<td>可替换 Day 3 中餐 / Day 5 中午</td>
+<td data-label="餐厅">◎ 金强牛肉面</td>
+<td data-label="招牌 / 说明">牛肉拌面</td>
+<td data-label="状态">可替换 Day 3 中餐 / Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-14">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 益渼乌冬面</td>
-<td>纯手工乌冬</td>
-<td>可替换 Day 3 中餐 / Day 5 中午</td>
+<td data-label="餐厅">◎ 益渼乌冬面</td>
+<td data-label="招牌 / 说明">纯手工乌冬</td>
+<td data-label="状态">可替换 Day 3 中餐 / Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-15">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>韩渔面馆</td>
-<td>淮扬长鱼面，现炒鳝鱼浇头</td>
-<td>可替换 Day 3 中餐 / Day 5 中午</td>
+<td data-label="餐厅">韩渔面馆</td>
+<td data-label="招牌 / 说明">淮扬长鱼面，现炒鳝鱼浇头</td>
+<td data-label="状态">可替换 Day 3 中餐 / Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-16">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 四如春食府</td>
-<td>老牌冷面 ⚠ 夏季限定</td>
-<td>本季（秋）跳过；夏季可替换 Day 3 中餐</td>
+<td data-label="餐厅">◎ 四如春食府</td>
+<td data-label="招牌 / 说明">老牌冷面 ⚠ 夏季限定</td>
+<td data-label="状态">本季（秋）跳过；夏季可替换 Day 3 中餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-17">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>小杨生煎</td>
-<td>混水派，皮薄汤多</td>
-<td>可替换 Day 5 中午（与清水派大壶春互补）</td>
+<td data-label="餐厅">小杨生煎</td>
+<td data-label="招牌 / 说明">混水派，皮薄汤多</td>
+<td data-label="状态">可替换 Day 5 中午（与清水派大壶春互补）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-18">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 叁店卤肉饭</td>
-<td>小碗卤肉饭</td>
-<td>可替换 Day 1 中午 / Day 5 中午</td>
+<td data-label="餐厅">◎ 叁店卤肉饭</td>
+<td data-label="招牌 / 说明">小碗卤肉饭</td>
+<td data-label="状态">可替换 Day 1 中午 / Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T14-19">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>鲜得来 / 小绍兴</td>
-<td>排骨年糕 / 白斩鸡（原云南南路美食街）</td>
-<td>可替换 Day 1 中午（黄河路）/ Day 5 中午</td>
+<td data-label="餐厅">鲜得来 / 小绍兴</td>
+<td data-label="招牌 / 说明">排骨年糕 / 白斩鸡（原云南南路美食街）</td>
+<td data-label="状态">可替换 Day 1 中午（黄河路）/ Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1243,81 +1334,81 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T15-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 沈大成（南京路）</td>
-<td>条头糕、双酿团、定胜糕</td>
-<td>★ Day 1 上午（也是伴手礼）</td>
+<td data-label="餐厅 / 项目">★ 沈大成（南京路）</td>
+<td data-label="招牌 / 说明">条头糕、双酿团、定胜糕</td>
+<td data-label="状态">★ Day 1 上午（也是伴手礼）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T15-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 黄河路美食街</td>
-<td>人民广场北侧步行可达，本地人价，沿街本帮小馆 + 点心</td>
-<td>★ Day 1 中午</td>
+<td data-label="餐厅 / 项目">★ 黄河路美食街</td>
+<td data-label="招牌 / 说明">人民广场北侧步行可达，本地人价，沿街本帮小馆 + 点心</td>
+<td data-label="状态">★ Day 1 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T15-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 朱家角古镇内小馆</td>
-<td>扎肉、阿婆粽、河鲜；避开主街最贵的几家</td>
-<td>★ Day 4 中餐</td>
+<td data-label="餐厅 / 项目">★ 朱家角古镇内小馆</td>
+<td data-label="招牌 / 说明">扎肉、阿婆粽、河鲜；避开主街最贵的几家</td>
+<td data-label="状态">★ Day 4 中餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T15-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★◎ 彭浦一炸</td>
-<td>老牌炸串，1 号线彭浦新村站附近</td>
-<td>★ Day 1 宵夜（回酒店顺路）</td>
+<td data-label="餐厅 / 项目">★◎ 彭浦一炸</td>
+<td data-label="招牌 / 说明">老牌炸串，1 号线彭浦新村站附近</td>
+<td data-label="状态">★ Day 1 宵夜（回酒店顺路）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T15-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★◎ 胖叔叔铁板烧烤摊</td>
-<td>波阳创业园店，自选串串 + 铁板炒面</td>
-<td>★ Day 1 宵夜</td>
+<td data-label="餐厅 / 项目">★◎ 胖叔叔铁板烧烤摊</td>
+<td data-label="招牌 / 说明">波阳创业园店，自选串串 + 铁板炒面</td>
+<td data-label="状态">★ Day 1 宵夜</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T15-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 吴记麻辣烫</td>
-<td>夜宵属性</td>
-<td>可替换 Day 1 宵夜</td>
+<td data-label="餐厅 / 项目">◎ 吴记麻辣烫</td>
+<td data-label="招牌 / 说明">夜宵属性</td>
+<td data-label="状态">可替换 Day 1 宵夜</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T15-7">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 星巴克臻选烘焙工坊</td>
-<td>咖啡 + 烘焙</td>
-<td>★ Day 3 傍晚（歇脚点）</td>
+<td data-label="餐厅 / 项目">★ 星巴克臻选烘焙工坊</td>
+<td data-label="招牌 / 说明">咖啡 + 烘焙</td>
+<td data-label="状态">★ Day 3 傍晚（歇脚点）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T15-8">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 哈尔滨食品厂</td>
-<td>蝴蝶酥</td>
-<td>★ Day 3 傍晚（伴手礼）</td>
+<td data-label="餐厅 / 项目">★ 哈尔滨食品厂</td>
+<td data-label="招牌 / 说明">蝴蝶酥</td>
+<td data-label="状态">★ Day 3 傍晚（伴手礼）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T15-9">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 梨膏糖</td>
-<td>老上海伴手礼</td>
-<td>★ Day 3 傍晚（伴手礼）</td>
+<td data-label="餐厅 / 项目">★ 梨膏糖</td>
+<td data-label="招牌 / 说明">老上海伴手礼</td>
+<td data-label="状态">★ Day 3 傍晚（伴手礼）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T15-10">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>路上小吃</td>
-<td>海棠糕、萝卜丝饼、粢饭团、葱油饼</td>
-<td>★ Day 5 中午（来不及兜底）</td>
+<td data-label="餐厅 / 项目">路上小吃</td>
+<td data-label="招牌 / 说明">海棠糕、萝卜丝饼、粢饭团、葱油饼</td>
+<td data-label="状态">★ Day 5 中午（来不及兜底）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1333,121 +1424,121 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T16-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 伊祥・敦煌楼</td>
-<td>牛肉面</td>
-<td>★ Day 3 晚餐</td>
+<td data-label="餐厅">★ 伊祥・敦煌楼</td>
+<td data-label="招牌 / 说明">牛肉面</td>
+<td data-label="状态">★ Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 宁夏印象·盐池滩羊肉</td>
-<td>烤羊排</td>
-<td>★ Day 3 晚餐</td>
+<td data-label="餐厅">★ 宁夏印象·盐池滩羊肉</td>
+<td data-label="招牌 / 说明">烤羊排</td>
+<td data-label="状态">★ Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 金湘隆・清派湘菜</td>
-<td>鸳鸯鱼头王</td>
-<td>★ Day 3 晚餐</td>
+<td data-label="餐厅">★ 金湘隆・清派湘菜</td>
+<td data-label="招牌 / 说明">鸳鸯鱼头王</td>
+<td data-label="状态">★ Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 红子鸡凤凰楼</td>
-<td>脆皮鸡</td>
-<td>★ Day 3 晚餐</td>
+<td data-label="餐厅">★ 红子鸡凤凰楼</td>
+<td data-label="招牌 / 说明">脆皮鸡</td>
+<td data-label="状态">★ Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 三清潭</td>
-<td>黑珍珠烧鹅</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 三清潭</td>
+<td data-label="招牌 / 说明">黑珍珠烧鹅</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 鹅佬柒铺</td>
-<td>平价烧腊</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 鹅佬柒铺</td>
+<td data-label="招牌 / 说明">平价烧腊</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-7">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 红房子西菜馆</td>
-<td>中国四大西餐厅之一，海派西餐历史</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 红房子西菜馆</td>
+<td data-label="招牌 / 说明">中国四大西餐厅之一，海派西餐历史</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-8">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 聚黔庄</td>
-<td>贵州菜</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 聚黔庄</td>
+<td data-label="招牌 / 说明">贵州菜</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-9">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 泉仔</td>
-<td>闽南小吃</td>
-<td>可替换 Day 3 晚餐 / Day 5 中午</td>
+<td data-label="餐厅">◎ 泉仔</td>
+<td data-label="招牌 / 说明">闽南小吃</td>
+<td data-label="状态">可替换 Day 3 晚餐 / Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-10">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 福悦捞化</td>
-<td>福州小吃</td>
-<td>可替换 Day 3 晚餐 / Day 5 中午</td>
+<td data-label="餐厅">◎ 福悦捞化</td>
+<td data-label="招牌 / 说明">福州小吃</td>
+<td data-label="状态">可替换 Day 3 晚餐 / Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-11">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 鑼獅</td>
-<td>螺蛳粉</td>
-<td>可替换 Day 3 晚餐 / Day 5 中午</td>
+<td data-label="餐厅">◎ 鑼獅</td>
+<td data-label="招牌 / 说明">螺蛳粉</td>
+<td data-label="状态">可替换 Day 3 晚餐 / Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-12">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 惠中川香蛙</td>
-<td>牛蛙锅</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 惠中川香蛙</td>
+<td data-label="招牌 / 说明">牛蛙锅</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-13">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 金易黔江鸡杂</td>
-<td>黔江鸡杂</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 金易黔江鸡杂</td>
+<td data-label="招牌 / 说明">黔江鸡杂</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-14">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 郑阿公</td>
-<td>粤菜</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 郑阿公</td>
+<td data-label="招牌 / 说明">粤菜</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T16-15">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 望庐·精细手工江西菜</td>
-<td>⚠ 谨慎参考：信息源自企业处罚公告，非美食视频</td>
-<td>可替换 Day 3 晚餐（自行判断）</td>
+<td data-label="餐厅">◎ 望庐·精细手工江西菜</td>
+<td data-label="招牌 / 说明">⚠ 谨慎参考：信息源自企业处罚公告，非美食视频</td>
+<td data-label="状态">可替换 Day 3 晚餐（自行判断）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1463,97 +1554,97 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T17-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>★ 丽思卡尔顿 Flair Rooftop</td>
-<td>露台位俯瞰外滩灯火，需订位</td>
-<td>★ Day 1 晚餐</td>
+<td data-label="餐厅">★ 丽思卡尔顿 Flair Rooftop</td>
+<td data-label="招牌 / 说明">露台位俯瞰外滩灯火，需订位</td>
+<td data-label="状态">★ Day 1 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 下班後</td>
-<td>烧鸟小店</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 下班後</td>
+<td data-label="招牌 / 说明">烧鸟小店</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 京都一乘寺</td>
-<td>小众日式拉面</td>
-<td>可替换 Day 3 中餐 / Day 5 中午</td>
+<td data-label="餐厅">◎ 京都一乘寺</td>
+<td data-label="招牌 / 说明">小众日式拉面</td>
+<td data-label="状态">可替换 Day 3 中餐 / Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 鮨尺</td>
-<td>寿司</td>
-<td>需另加一餐（高端，需订位）</td>
+<td data-label="餐厅">◎ 鮨尺</td>
+<td data-label="招牌 / 说明">寿司</td>
+<td data-label="状态">需另加一餐（高端，需订位）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 伍棵煋碳烤自助</td>
-<td>鳗鱼</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 伍棵煋碳烤自助</td>
+<td data-label="招牌 / 说明">鳗鱼</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 尚蒸燚</td>
-<td>蒸汽海鲜</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 尚蒸燚</td>
+<td data-label="招牌 / 说明">蒸汽海鲜</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-7">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 大神太神</td>
-<td>铁板烧</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 大神太神</td>
+<td data-label="招牌 / 说明">铁板烧</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-8">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 汉巴味德</td>
-<td>自助</td>
-<td>可替换 Day 3 晚餐</td>
+<td data-label="餐厅">◎ 汉巴味德</td>
+<td data-label="招牌 / 说明">自助</td>
+<td data-label="状态">可替换 Day 3 晚餐</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-9">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 尚牛社会</td>
-<td>汉堡</td>
-<td>可替换 Day 3 晚餐 / Day 5 中午</td>
+<td data-label="餐厅">◎ 尚牛社会</td>
+<td data-label="招牌 / 说明">汉堡</td>
+<td data-label="状态">可替换 Day 3 晚餐 / Day 5 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-10">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 福和慧</td>
-<td>高端素食</td>
-<td>需另加一餐（需订位）</td>
+<td data-label="餐厅">◎ 福和慧</td>
+<td data-label="招牌 / 说明">高端素食</td>
+<td data-label="状态">需另加一餐（需订位）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-11">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 泰安门</td>
-<td>高端</td>
-<td>需另加一餐（需订位）</td>
+<td data-label="餐厅">◎ 泰安门</td>
+<td data-label="招牌 / 说明">高端</td>
+<td data-label="状态">需另加一餐（需订位）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T17-12">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>◎ 乔尔·卢布松美食坊</td>
-<td>高端法餐</td>
-<td>需另加一餐（需订位）</td>
+<td data-label="餐厅">◎ 乔尔·卢布松美食坊</td>
+<td data-label="招牌 / 说明">高端法餐</td>
+<td data-label="状态">需另加一餐（需订位）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="5"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1625,91 +1716,91 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T18-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>南京路步行街</td>
-<td>黄浦</td>
-<td>南京东路（河南中路—西藏中路）</td>
-<td>1/2/8 号线人民广场站；Day 1 上午</td>
+<td data-label="项目">南京路步行街</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">南京东路（河南中路—西藏中路）</td>
+<td data-label="备注">1/2/8 号线人民广场站；Day 1 上午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T18-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>人民广场</td>
-<td>黄浦</td>
-<td>人民大道（黄陂北路—西藏中路）</td>
-<td>1 号线<strong>直达</strong>，全程换乘枢纽</td>
+<td data-label="项目">人民广场</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">人民大道（黄陂北路—西藏中路）</td>
+<td data-label="备注">1 号线<strong>直达</strong>，全程换乘枢纽</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T18-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上海博物馆 · 人民广场馆</td>
-<td>黄浦</td>
-<td>人民大道 201 号</td>
-<td>现为大型特展馆；Day 5 上午</td>
+<td data-label="项目">上海博物馆 · 人民广场馆</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">人民大道 201 号</td>
+<td data-label="备注">现为大型特展馆；Day 5 上午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T18-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>黄河路美食街</td>
-<td>黄浦</td>
-<td>黄河路（凤阳路—北京西路）</td>
-<td>人民广场北侧步行可达；Day 1 中午</td>
+<td data-label="项目">黄河路美食街</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">黄河路（凤阳路—北京西路）</td>
+<td data-label="备注">人民广场北侧步行可达；Day 1 中午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T18-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>外滩（万国建筑博览群）</td>
-<td>黄浦</td>
-<td>中山东一路（延安东路—外白渡桥）</td>
-<td>Day 1 下午</td>
+<td data-label="项目">外滩（万国建筑博览群）</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">中山东一路（延安东路—外白渡桥）</td>
+<td data-label="备注">Day 1 下午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T18-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>外白渡桥</td>
-<td>黄浦／虹口交界</td>
-<td>中山东一路北端（苏州河口）</td>
-<td>与乍浦路桥紧邻</td>
+<td data-label="项目">外白渡桥</td>
+<td data-label="区">黄浦／虹口交界</td>
+<td data-label="地址">中山东一路北端（苏州河口）</td>
+<td data-label="备注">与乍浦路桥紧邻</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T18-7">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>乍浦路桥</td>
-<td>虹口</td>
-<td>乍浦路南端（苏州河上）</td>
-<td>经典拍照机位</td>
+<td data-label="项目">乍浦路桥</td>
+<td data-label="区">虹口</td>
+<td data-label="地址">乍浦路南端（苏州河上）</td>
+<td data-label="备注">经典拍照机位</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T18-8">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上海邮政博物馆</td>
-<td>虹口</td>
-<td>天潼路 395 号</td>
-<td>免费；苏州河口</td>
+<td data-label="项目">上海邮政博物馆</td>
+<td data-label="区">虹口</td>
+<td data-label="地址">天潼路 395 号</td>
+<td data-label="备注">免费；苏州河口</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T18-9">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>金陵东路渡口（东金线）</td>
-<td>黄浦</td>
-<td>中山东二路 · 金陵东路轮渡站</td>
-<td>2 元过江；Day 1 傍晚</td>
+<td data-label="项目">金陵东路渡口（东金线）</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">中山东二路 · 金陵东路轮渡站</td>
+<td data-label="备注">2 元过江；Day 1 傍晚</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T18-10">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>北外滩滨江</td>
-<td>虹口</td>
-<td>东大名路滨江（公平路—外白渡桥）</td>
-<td>拍陆家嘴机位，人比外滩少</td>
+<td data-label="项目">北外滩滨江</td>
+<td data-label="区">虹口</td>
+<td data-label="地址">东大名路滨江（公平路—外白渡桥）</td>
+<td data-label="备注">拍陆家嘴机位，人比外滩少</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1726,37 +1817,37 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T19-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>豫园</td>
-<td>黄浦</td>
-<td>福佑路 168 号（北门）</td>
-<td>需提前 3–7 天预约；Day 2 上午</td>
+<td data-label="项目">豫园</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">福佑路 168 号（北门）</td>
+<td data-label="备注">需提前 3–7 天预约；Day 2 上午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T19-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>城隍庙 · 豫园商城</td>
-<td>黄浦</td>
-<td>方浜中路 · 豫园老街</td>
-<td>与豫园一体，小吃属游客价</td>
+<td data-label="项目">城隍庙 · 豫园商城</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">方浜中路 · 豫园老街</td>
+<td data-label="备注">与豫园一体，小吃属游客价</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T19-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>九曲桥</td>
-<td>黄浦</td>
-<td>豫园商城内（城隍庙前）</td>
-<td>免费段，浅尝即可</td>
+<td data-label="项目">九曲桥</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">豫园商城内（城隍庙前）</td>
+<td data-label="备注">免费段，浅尝即可</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T19-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>古城公园</td>
-<td>黄浦</td>
-<td>人民路 · 福佑路口（豫园北侧）</td>
-<td>免费，500 m 半径延伸</td>
+<td data-label="项目">古城公园</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">人民路 · 福佑路口（豫园北侧）</td>
+<td data-label="备注">免费，500 m 半径延伸</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1773,37 +1864,37 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T20-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>田子坊</td>
-<td>黄浦</td>
-<td>泰康路 210 弄（建国中路）</td>
-<td>9 号线打浦桥站；Day 2 下午</td>
+<td data-label="项目">田子坊</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">泰康路 210 弄（建国中路）</td>
+<td data-label="备注">9 号线打浦桥站；Day 2 下午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T20-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>新天地</td>
-<td>黄浦</td>
-<td>马当路／黄陂南路（兴业路一带）</td>
-<td>10/13 号线新天地站</td>
+<td data-label="项目">新天地</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">马当路／黄陂南路（兴业路一带）</td>
+<td data-label="备注">10/13 号线新天地站</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T20-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>思南公馆</td>
-<td>黄浦</td>
-<td>复兴中路 537 号（思南路）</td>
-<td>老洋房群，串联当晚酒吧</td>
+<td data-label="项目">思南公馆</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">复兴中路 537 号（思南路）</td>
+<td data-label="备注">老洋房群，串联当晚酒吧</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T20-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>复兴中路酒吧三连</td>
-<td>黄浦</td>
-<td>复兴中路 527 号／579 号／580 弄</td>
-<td>Bar Leone・Speak Low・COA，互相步行 3 分钟</td>
+<td data-label="项目">复兴中路酒吧三连</td>
+<td data-label="区">黄浦</td>
+<td data-label="地址">复兴中路 527 号／579 号／580 弄</td>
+<td data-label="备注">Bar Leone・Speak Low・COA，互相步行 3 分钟</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1820,55 +1911,55 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T21-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>武康大楼</td>
-<td>徐汇</td>
-<td>淮海中路 1850 号（武康路口）</td>
-<td>1 号线衡山路站步行 10 分钟</td>
+<td data-label="项目">武康大楼</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">淮海中路 1850 号（武康路口）</td>
+<td data-label="备注">1 号线衡山路站步行 10 分钟</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T21-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>武康路（精华段）</td>
-<td>徐汇</td>
-<td>武康路（淮海中路—华山路，约 1.2 km）</td>
-<td>Day 3 上午</td>
+<td data-label="项目">武康路（精华段）</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">武康路（淮海中路—华山路，约 1.2 km）</td>
+<td data-label="备注">Day 3 上午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T21-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>武康庭</td>
-<td>徐汇</td>
-<td>武康路 376 号</td>
-<td>咖啡歇脚点</td>
+<td data-label="项目">武康庭</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">武康路 376 号</td>
+<td data-label="备注">咖啡歇脚点</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T21-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>巴金故居</td>
-<td>徐汇</td>
-<td>武康路 113 号</td>
-<td>免费</td>
+<td data-label="项目">巴金故居</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">武康路 113 号</td>
+<td data-label="备注">免费</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T21-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>安福路</td>
-<td>徐汇</td>
-<td>安福路（武康路—常熟路，约 1 km）</td>
-<td>Day 3 上午，体力一般可跳过</td>
+<td data-label="项目">安福路</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">安福路（武康路—常熟路，约 1 km）</td>
+<td data-label="备注">Day 3 上午，体力一般可跳过</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T21-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上海话剧艺术中心</td>
-<td>徐汇</td>
-<td>安福路 288 号</td>
-<td>就在安福路上</td>
+<td data-label="项目">上海话剧艺术中心</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">安福路 288 号</td>
+<td data-label="备注">就在安福路上</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1885,19 +1976,19 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T22-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>徐家汇书院</td>
-<td>徐汇</td>
-<td>漕溪北路 158 号</td>
-<td>观景露台俯瞰天主教堂</td>
+<td data-label="项目">徐家汇书院</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">漕溪北路 158 号</td>
+<td data-label="备注">观景露台俯瞰天主教堂</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T22-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>徐家汇天主堂</td>
-<td>徐汇</td>
-<td>蒲西路 158 号</td>
-<td>与书院步行 5 分钟</td>
+<td data-label="项目">徐家汇天主堂</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">蒲西路 158 号</td>
+<td data-label="备注">与书院步行 5 分钟</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1914,46 +2005,46 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T23-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>徐汇滨江</td>
-<td>徐汇</td>
-<td>龙腾大道（日晖港—徐浦大桥，约 10 km 岸线）</td>
-<td>已并入 Day 3 下午</td>
+<td data-label="项目">徐汇滨江</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">龙腾大道（日晖港—徐浦大桥，约 10 km 岸线）</td>
+<td data-label="备注">已并入 Day 3 下午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T23-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>西岸美术馆</td>
-<td>徐汇</td>
-<td>龙腾大道 2555 号</td>
-<td>Day 3 下午／Day 5 改线</td>
+<td data-label="项目">西岸美术馆</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">龙腾大道 2555 号</td>
+<td data-label="备注">Day 3 下午／Day 5 改线</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T23-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>穹顶艺术中心</td>
-<td>徐汇</td>
-<td>龙腾大道 · 西岸艺术区（美术馆旁）</td>
-<td>同上</td>
+<td data-label="项目">穹顶艺术中心</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">龙腾大道 · 西岸艺术区（美术馆旁）</td>
+<td data-label="备注">同上</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T23-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>龙华寺</td>
-<td>徐汇</td>
-<td>龙华路 2853 号</td>
-<td>Day 5 改线</td>
+<td data-label="项目">龙华寺</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">龙华路 2853 号</td>
+<td data-label="备注">Day 5 改线</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T23-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>龙华滨江</td>
-<td>徐汇</td>
-<td>龙华西路 · 龙腾大道南段</td>
-<td>与龙华寺相邻</td>
+<td data-label="项目">龙华滨江</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">龙华西路 · 龙腾大道南段</td>
+<td data-label="备注">与龙华寺相邻</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -1970,37 +2061,37 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T24-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>静安寺</td>
-<td>静安</td>
-<td>南京西路 1686 号</td>
-<td>2/7/14 号线静安寺站</td>
+<td data-label="项目">静安寺</td>
+<td data-label="区">静安</td>
+<td data-label="地址">南京西路 1686 号</td>
+<td data-label="备注">2/7/14 号线静安寺站</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T24-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>静安公园</td>
-<td>静安</td>
-<td>南京西路 1649 号（寺对面）</td>
-<td>免费</td>
+<td data-label="项目">静安公园</td>
+<td data-label="区">静安</td>
+<td data-label="地址">南京西路 1649 号（寺对面）</td>
+<td data-label="备注">免费</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T24-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>星巴克臻选烘焙工坊</td>
-<td>静安</td>
-<td>南京西路 789 号（兴业太古汇）</td>
-<td>Day 3 傍晚歇脚</td>
+<td data-label="项目">星巴克臻选烘焙工坊</td>
+<td data-label="区">静安</td>
+<td data-label="地址">南京西路 789 号（兴业太古汇）</td>
+<td data-label="备注">Day 3 傍晚歇脚</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T24-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>久光百货／嘉里中心</td>
-<td>静安</td>
-<td>南京西路 1618 号／1515 号</td>
-<td>歇脚 + 伴手礼</td>
+<td data-label="项目">久光百货／嘉里中心</td>
+<td data-label="区">静安</td>
+<td data-label="地址">南京西路 1618 号／1515 号</td>
+<td data-label="备注">歇脚 + 伴手礼</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -2017,46 +2108,46 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T25-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上海自然博物馆</td>
-<td>静安</td>
-<td>北京西路 510 号</td>
-<td>13 号线自然博物馆站；Day 5 上午备选</td>
+<td data-label="项目">上海自然博物馆</td>
+<td data-label="区">静安</td>
+<td data-label="地址">北京西路 510 号</td>
+<td data-label="备注">13 号线自然博物馆站；Day 5 上午备选</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T25-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>四行仓库抗战纪念馆</td>
-<td>静安</td>
-<td>光复路 1 号（西藏北路桥西堍）</td>
-<td>免费；8/12 号线曲阜路站；Day 5 下午</td>
+<td data-label="项目">四行仓库抗战纪念馆</td>
+<td data-label="区">静安</td>
+<td data-label="地址">光复路 1 号（西藏北路桥西堍）</td>
+<td data-label="备注">免费；8/12 号线曲阜路站；Day 5 下午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T25-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>M50 创意园</td>
-<td>普陀</td>
-<td>莫干山路 50 号</td>
-<td>苏州河南岸，与四行仓库隔河步行约 15 分钟</td>
+<td data-label="项目">M50 创意园</td>
+<td data-label="区">普陀</td>
+<td data-label="地址">莫干山路 50 号</td>
+<td data-label="备注">苏州河南岸，与四行仓库隔河步行约 15 分钟</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T25-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>天安千树</td>
-<td>普陀</td>
-<td>莫干山路 600 号</td>
-<td>糖水市集；Day 5 下午</td>
+<td data-label="项目">天安千树</td>
+<td data-label="区">普陀</td>
+<td data-label="地址">莫干山路 600 号</td>
+<td data-label="备注">糖水市集；Day 5 下午</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T25-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>苏州河步道</td>
-<td>普陀／静安／虹口／黄浦</td>
-<td>苏州河沿岸贯通步道</td>
-<td>串联 M50 与四行仓库</td>
+<td data-label="项目">苏州河步道</td>
+<td data-label="区">普陀／静安／虹口／黄浦</td>
+<td data-label="地址">苏州河沿岸贯通步道</td>
+<td data-label="备注">串联 M50 与四行仓库</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -2073,73 +2164,73 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T26-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上海中心大厦（118F「上海之巅」）</td>
-<td>浦东</td>
-<td>银城中路 501 号</td>
-<td>180 元；Day 1 夜</td>
+<td data-label="项目">上海中心大厦（118F「上海之巅」）</td>
+<td data-label="区">浦东</td>
+<td data-label="地址">银城中路 501 号</td>
+<td data-label="备注">180 元；Day 1 夜</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T26-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>朵云书院（52F）</td>
-<td>浦东</td>
-<td>银城中路 501 号 · 上海中心大厦 52 层</td>
-<td>免费但需提前 7 天 0:00 抢号</td>
+<td data-label="项目">朵云书院（52F）</td>
+<td data-label="区">浦东</td>
+<td data-label="地址">银城中路 501 号 · 上海中心大厦 52 层</td>
+<td data-label="备注">免费但需提前 7 天 0:00 抢号</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T26-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>环球金融中心</td>
-<td>浦东</td>
-<td>世纪大道 100 号</td>
-<td>100F 观光厅</td>
+<td data-label="项目">环球金融中心</td>
+<td data-label="区">浦东</td>
+<td data-label="地址">世纪大道 100 号</td>
+<td data-label="备注">100F 观光厅</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T26-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>金茂大厦</td>
-<td>浦东</td>
-<td>世纪大道 88 号</td>
-<td>88F 观光厅</td>
+<td data-label="项目">金茂大厦</td>
+<td data-label="区">浦东</td>
+<td data-label="地址">世纪大道 88 号</td>
+<td data-label="备注">88F 观光厅</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T26-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>东方明珠</td>
-<td>浦东</td>
-<td>世纪大道 1 号</td>
-<td>Day 1 备用项</td>
+<td data-label="项目">东方明珠</td>
+<td data-label="区">浦东</td>
+<td data-label="地址">世纪大道 1 号</td>
+<td data-label="备注">Day 1 备用项</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T26-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>浦东美术馆</td>
-<td>浦东</td>
-<td>滨江大道 2777 号</td>
-<td>一票通馆 80 元起</td>
+<td data-label="项目">浦东美术馆</td>
+<td data-label="区">浦东</td>
+<td data-label="地址">滨江大道 2777 号</td>
+<td data-label="备注">一票通馆 80 元起</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T26-7">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>陆家嘴滨江（滨江大道）</td>
-<td>浦东</td>
-<td>滨江大道（东昌路—东园路）</td>
-<td>免费夜景平替</td>
+<td data-label="项目">陆家嘴滨江（滨江大道）</td>
+<td data-label="区">浦东</td>
+<td data-label="地址">滨江大道（东昌路—东园路）</td>
+<td data-label="备注">免费夜景平替</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T26-8">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>国金中心 IFC</td>
-<td>浦东</td>
-<td>世纪大道 8 号</td>
-<td>Flair Rooftop 在 58 层</td>
+<td data-label="项目">国金中心 IFC</td>
+<td data-label="区">浦东</td>
+<td data-label="地址">世纪大道 8 号</td>
+<td data-label="备注">Flair Rooftop 在 58 层</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -2156,10 +2247,10 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T27-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上海博物馆东馆</td>
-<td>浦东</td>
-<td>世纪大道 1952 号</td>
-<td>免费免预约刷证入馆；<strong>周二闭馆（10/6 用不了）</strong></td>
+<td data-label="项目">上海博物馆东馆</td>
+<td data-label="区">浦东</td>
+<td data-label="地址">世纪大道 1952 号</td>
+<td data-label="备注">免费免预约刷证入馆；<strong>周二闭馆（10/6 用不了）</strong></td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -2176,19 +2267,19 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T28-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上海玻璃博物馆</td>
-<td>宝山</td>
-<td>长江西路 685 号</td>
-<td>距酒店车程约 10 分钟</td>
+<td data-label="项目">上海玻璃博物馆</td>
+<td data-label="区">宝山</td>
+<td data-label="地址">长江西路 685 号</td>
+<td data-label="备注">距酒店车程约 10 分钟</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T28-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>智慧湾科创园</td>
-<td>宝山</td>
-<td>蕰川路（近长江西路）</td>
-<td>同上</td>
+<td data-label="项目">智慧湾科创园</td>
+<td data-label="区">宝山</td>
+<td data-label="地址">蕰川路（近长江西路）</td>
+<td data-label="备注">同上</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -2205,37 +2296,37 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T29-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>朱家角古镇</td>
-<td>青浦</td>
-<td>朱家角镇（新风路／北大街一带）</td>
-<td>17 号线朱家角站；古镇免费</td>
+<td data-label="项目">朱家角古镇</td>
+<td data-label="区">青浦</td>
+<td data-label="地址">朱家角镇（新风路／北大街一带）</td>
+<td data-label="备注">17 号线朱家角站；古镇免费</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T29-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>课植园</td>
-<td>青浦</td>
-<td>朱家角镇西井街 111 号</td>
-<td>20 元</td>
+<td data-label="项目">课植园</td>
+<td data-label="区">青浦</td>
+<td data-label="地址">朱家角镇西井街 111 号</td>
+<td data-label="备注">20 元</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T29-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>放生桥</td>
-<td>青浦</td>
-<td>朱家角镇（漕港河上）</td>
-<td>古镇核心</td>
+<td data-label="项目">放生桥</td>
+<td data-label="区">青浦</td>
+<td data-label="地址">朱家角镇（漕港河上）</td>
+<td data-label="备注">古镇核心</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T29-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>蟠龙天地</td>
-<td>青浦</td>
-<td>蟠龙路 · 蟠龙古镇旧址</td>
-<td>17 号线蟠龙路站，返程顺路</td>
+<td data-label="项目">蟠龙天地</td>
+<td data-label="区">青浦</td>
+<td data-label="地址">蟠龙路 · 蟠龙古镇旧址</td>
+<td data-label="备注">17 号线蟠龙路站，返程顺路</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -2252,55 +2343,55 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T30-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>桂林公园</td>
-<td>徐汇</td>
-<td>桂林路 128 号</td>
-<td>市区免费古典园林，飘满桂香</td>
+<td data-label="项目">桂林公园</td>
+<td data-label="区">徐汇</td>
+<td data-label="地址">桂林路 128 号</td>
+<td data-label="备注">市区免费古典园林，飘满桂香</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T30-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>环球港观光台（258 m）</td>
-<td>普陀</td>
-<td>中山北路 · 环球港</td>
-<td>性价比更高的登高；Day 1 替代上海中心</td>
+<td data-label="项目">环球港观光台（258 m）</td>
+<td data-label="区">普陀</td>
+<td data-label="地址">中山北路 · 环球港</td>
+<td data-label="备注">性价比更高的登高；Day 1 替代上海中心</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T30-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>真如古镇（真如寺）</td>
-<td>普陀</td>
-<td>兰溪路（真如寺一带）</td>
-<td>Day 4 不出市备选</td>
+<td data-label="项目">真如古镇（真如寺）</td>
+<td data-label="区">普陀</td>
+<td data-label="地址">兰溪路（真如寺一带）</td>
+<td data-label="备注">Day 4 不出市备选</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T30-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>苏州河游船</td>
-<td>黄浦／普陀</td>
-<td>码头：外滩源／昌平路等（下单页显示）</td>
-<td>Day 4 备选</td>
+<td data-label="项目">苏州河游船</td>
+<td data-label="区">黄浦／普陀</td>
+<td data-label="地址">码头：外滩源／昌平路等（下单页显示）</td>
+<td data-label="备注">Day 4 备选</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T30-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>共青森林公园</td>
-<td>杨浦</td>
-<td>军工路 2000 号</td>
-<td>城市氧吧，野餐骑行</td>
+<td data-label="项目">共青森林公园</td>
+<td data-label="区">杨浦</td>
+<td data-label="地址">军工路 2000 号</td>
+<td data-label="备注">城市氧吧，野餐骑行</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T30-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td>上海马戏城</td>
-<td>静安</td>
-<td>共和新路 2266 号</td>
-<td>1 号线直达，回酒店顺路</td>
+<td data-label="项目">上海马戏城</td>
+<td data-label="区">静安</td>
+<td data-label="地址">共和新路 2266 号</td>
+<td data-label="备注">1 号线直达，回酒店顺路</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="6"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -2315,64 +2406,64 @@ tr.note-row .note-box textarea{min-height:50px}
 </tr></thead><tbody>
 <tr class="task" data-id="T31-1">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>黄浦</strong></td>
-<td>A 外滩・人民广场・南京路、B 豫园・城隍庙、C 新天地・田子坊・复兴中路</td>
+<td data-label="区"><strong>黄浦</strong></td>
+<td data-label="包含的点（组别）">A 外滩・人民广场・南京路、B 豫园・城隍庙、C 新天地・田子坊・复兴中路</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T31-2">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>虹口</strong></td>
-<td>外白渡桥北・乍浦路桥・邮政博物馆・北外滩（A 组北端）</td>
+<td data-label="区"><strong>虹口</strong></td>
+<td data-label="包含的点（组别）">外白渡桥北・乍浦路桥・邮政博物馆・北外滩（A 组北端）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T31-3">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>徐汇</strong></td>
-<td>D 武康路・安福路、E 徐家汇、F 徐汇滨江・龙华、桂林公园（M）</td>
+<td data-label="区"><strong>徐汇</strong></td>
+<td data-label="包含的点（组别）">D 武康路・安福路、E 徐家汇、F 徐汇滨江・龙华、桂林公园（M）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T31-4">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>静安</strong></td>
-<td>G 静安寺・南京西路、H 自然博物馆・四行仓库、上海马戏城（M）</td>
+<td data-label="区"><strong>静安</strong></td>
+<td data-label="包含的点（组别）">G 静安寺・南京西路、H 自然博物馆・四行仓库、上海马戏城（M）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T31-5">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>浦东</strong></td>
-<td>I 陆家嘴・浦东滨江、J 上博东馆</td>
+<td data-label="区"><strong>浦东</strong></td>
+<td data-label="包含的点（组别）">I 陆家嘴・浦东滨江、J 上博东馆</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T31-6">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>普陀</strong></td>
-<td>M50・天安千树（H）、环球港・真如（M）</td>
+<td data-label="区"><strong>普陀</strong></td>
+<td data-label="包含的点（组别）">M50・天安千树（H）、环球港・真如（M）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T31-7">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>宝山</strong></td>
-<td>K 玻璃博物馆・智慧湾（酒店周边）</td>
+<td data-label="区"><strong>宝山</strong></td>
+<td data-label="包含的点（组别）">K 玻璃博物馆・智慧湾（酒店周边）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T31-8">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>青浦</strong></td>
-<td>L 朱家角・蟠龙天地</td>
+<td data-label="区"><strong>青浦</strong></td>
+<td data-label="包含的点（组别）">L 朱家角・蟠龙天地</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
 <tr class="task" data-id="T31-9">
 <td class="col-chk"><label class="chk"><input type="checkbox" class="chkbox"></label></td>
-<td><strong>杨浦</strong></td>
-<td>共青森林公园（M）</td>
+<td data-label="区"><strong>杨浦</strong></td>
+<td data-label="包含的点（组别）">共青森林公园（M）</td>
 <td class="col-note"><button type="button" class="note-btn" title="添加备注">✎</button></td>
 </tr>
 <tr class="note-row" hidden><td colspan="4"><div class="note-box"><textarea placeholder="写点备注…（自动保存）"></textarea></div></td></tr>
@@ -2626,6 +2717,16 @@ tr.note-row .note-box textarea{min-height:50px}
 
   // 默认把已有备注展开
   syncNoteBoxes();
+
+  // ---- 工具条实际高度 -> --barh（吸顶/留白都用它）----
+  var barEl = document.getElementById('bar');
+  function syncBarH(){
+    document.documentElement.style.setProperty('--barh', barEl.offsetHeight + 'px');
+  }
+  syncBarH();
+  window.addEventListener('resize', syncBarH);
+  window.addEventListener('orientationchange', function(){ setTimeout(syncBarH, 250); });
+  if (window.ResizeObserver){ try { new ResizeObserver(syncBarH).observe(barEl); } catch(e){} }
 
   toast('提示：点每行右侧的 ✎ 写备注，勾选框做标记，都会自动保存');
 })();
