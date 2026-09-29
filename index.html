@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>上海 10/2–10/6 游玩计划（可标记 · 可备注）</title>
 <style>
 :root{
@@ -265,6 +267,7 @@ tr.note-row .note-box textarea{min-height:50px}
   </div>
   <span class="spacer"></span>
   <button class="btn" id="btnExpand">全部展开</button>
+  <button class="btn" id="btnSync" title="云同步（手机 / 电脑双向合并）">云同步</button>
   <button class="btn" id="btnExport">导出备注</button>
   <button class="btn" id="btnSave">备份</button>
   <button class="btn" id="btnLoad">恢复</button>
@@ -2475,6 +2478,7 @@ tr.note-row .note-box textarea{min-height:50px}
 <script>
 (function(){
   var KEY = 'sh-plan-2026-v1';
+  var LAST_KEY = KEY + ':lastbackup';
   var state = {};
   var canStore = true;
   try {
@@ -2528,6 +2532,22 @@ tr.note-row .note-box textarea{min-height:50px}
   // ---- 绑定任务 ----
   var tasks = Array.prototype.slice.call(document.querySelectorAll('.task[data-id]'));
 
+  // 把 state 的值刷到界面上（初始化 / 云同步后都走这里）
+  function applyState(task){
+    var s = state[task.dataset.id] || {};
+    var cb = task.querySelector('.chkbox');
+    var ta = textareaOf(task);
+    var host = noteHostOf(task);
+    var b = noteBtnOf(task);
+    if (cb) cb.checked = !!s.done;
+    task.classList.toggle('done', !!s.done);
+    if (ta && ta.value !== (s.note || '')) ta.value = s.note || '';
+    var has = !!(s.note && s.note.trim());
+    if (b) b.classList.toggle('has', has);
+    task.classList.toggle('no-note', !has);
+    if (host) host.hidden = !has;
+  }
+
   // 备注「宿主」：真正带 hidden 的那个元素
   // li  -> 直接子级 .note-box（div）
   // tr  -> 紧随其后的 tr.note-row（隐藏标记在这一行上！）
@@ -2569,21 +2589,19 @@ tr.note-row .note-box textarea{min-height:50px}
     var st = state[id] || (state[id] = {done:false, note:''});
 
     if (cb){
-      cb.checked = !!st.done;
-      task.classList.toggle('done', !!st.done);
       cb.addEventListener('change', function(){
-        st.done = cb.checked;
+        st.done = cb.checked; st.ts = Date.now();
         task.classList.toggle('done', cb.checked);
-        save(); updateProgress();
+        save(); updateProgress(); maybeAutoSync();
       });
     }
     if (ta){
-      ta.value = st.note || '';
-      refreshNoteFlag();
       ta.addEventListener('input', function(){
-        st.note = ta.value; save(); refreshNoteFlag(); updateProgress();
+        st.note = ta.value; st.ts = Date.now();
+        save(); refreshNoteFlag(); updateProgress(); maybeAutoSync();
       });
     }
+    applyState(task);
     function refreshNoteFlag(){
       var has = !!(st.note && st.note.trim());
       if (btn) btn.classList.toggle('has', has);
@@ -2682,6 +2700,14 @@ tr.note-row .note-box textarea{min-height:50px}
 
   function download(name, content, type){
     var blob = new Blob([content], {type: type + ';charset=utf-8'});
+    // 手机上优先走系统分享：可直接存到微信收藏 / 文件 App
+    try {
+      var file = new File([blob], name, {type: type});
+      if (navigator.canShare && navigator.canShare({files: [file]})){
+        navigator.share({files: [file], title: name, text: name}).catch(function(){});
+        return;
+      }
+    } catch(e){}
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name;
     document.body.appendChild(a); a.click();
@@ -2691,7 +2717,9 @@ tr.note-row .note-box textarea{min-height:50px}
   // ---- 备份 / 恢复 ----
   document.getElementById('btnSave').addEventListener('click', function(){
     download('上海计划-备份.json', JSON.stringify(state, null, 2), 'application/json');
-    toast(canStore ? '已备份到本地（另存一份 JSON 更稳妥）' : '当前环境无法自动保存，请用此 JSON 备份');
+    try { localStorage.setItem(LAST_KEY, String(Date.now())); } catch(e){}
+    document.getElementById('btnSave').classList.remove('primary');
+    toast(canStore ? '已备份（存到微信收藏 / 文件 App 更稳妥）' : '当前环境无法自动保存，请用此 JSON 备份');
   });
   var fileInput = document.getElementById('fileInput');
   document.getElementById('btnLoad').addEventListener('click', function(){ fileInput.click(); });
@@ -2729,6 +2757,118 @@ tr.note-row .note-box textarea{min-height:50px}
   window.addEventListener('resize', syncBarH);
   window.addEventListener('orientationchange', function(){ setTimeout(syncBarH, 250); });
   if (window.ResizeObserver){ try { new ResizeObserver(syncBarH).observe(barEl); } catch(e){} }
+
+  // ---- 申请持久化存储：手机系统清缓存时不容易被回收 ----
+  if (navigator.storage && navigator.storage.persist){
+    navigator.storage.persist().then(function(ok){
+      if (ok) console.log('persistent storage granted');
+    }).catch(function(){});
+  }
+
+  // ---- Service Worker：加到主屏幕后可离线打开 ----
+  if ('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){});
+    });
+  }
+
+  // ---- 超过 48 小时没备份且有内容 -> 提醒 ----
+  (function(){
+    var has = tasks.some(function(t){
+      var s = state[t.dataset.id] || {};
+      return s.done || (s.note && s.note.trim());
+    });
+    if (!has) return;
+    var last = 0;
+    try { last = parseInt(localStorage.getItem(LAST_KEY) || '0', 10) || 0; } catch(e){}
+    if (Date.now() - last > 48 * 3600 * 1000){
+      document.getElementById('btnSave').classList.add('primary');
+      setTimeout(function(){ toast('有内容还没备份，点「备份」存一份到微信 / 文件'); }, 2800);
+    }
+  })();
+
+  // ---- 云同步（Cloudflare Workers + KV）----
+  var SYNC_URL = 'https://sh-plan-sync.generalawen-wkr.workers.dev';                       // 由 sync-url.txt 注入，留空则不启用
+  var SYNC_KEY_STORE = KEY + ':synckey';
+  var SYNC_LAST = KEY + ':syncts';
+
+  function getSyncKey(){ try { return localStorage.getItem(SYNC_KEY_STORE) || ''; } catch(e){ return ''; } }
+  function setSyncKey(k){ try { localStorage.setItem(SYNC_KEY_STORE, k); } catch(e){} }
+  function sinceSync(){ try { return Date.now() - (parseInt(localStorage.getItem(SYNC_LAST) || '0', 10) || 0); } catch(e){ return 1e18; } }
+
+  // 一次性配置：用 ?k=密钥 打开页面即可，之后从地址栏抹掉
+  (function(){
+    var m = location.search.match(/[?&]k=([^&]+)/);
+    if (m){
+      setSyncKey(decodeURIComponent(m[1]));
+      try { history.replaceState(null, '', location.pathname); } catch(e){}
+    }
+  })();
+
+  // 远端合入本地：同一条目取时间戳大的一边（原地改对象，避免丢引用）
+  function mergeRemote(remote){
+    var n = 0;
+    Object.keys(remote || {}).forEach(function(id){
+      var r = remote[id] || {};
+      var rt = r.ts || 0;
+      if (!state[id]) state[id] = {done: false, note: '', ts: 0};
+      var l = state[id];
+      if (rt > (l.ts || 0)){ l.done = !!r.done; l.note = r.note || ''; l.ts = rt; n++; }
+    });
+    return n;
+  }
+
+  function syncNow(silent){
+    if (!SYNC_URL){ if (!silent) toast('还没配置同步地址'); return; }
+    var k = getSyncKey();
+    if (!k){
+      k = prompt('粘贴同步密钥（部署时给你的那串 shp-…）');
+      if (!k) return;
+      k = k.trim(); setSyncKey(k);
+    }
+    if (!silent) toast('同步中…');
+    fetch(SYNC_URL + '/api?k=' + encodeURIComponent(k))
+      .then(function(r){
+        return r.json().then(function(j){
+          if (!j.ok) throw new Error(j.error || ('HTTP ' + r.status));
+          return j;
+        });
+      })
+      .then(function(j){
+        var n = mergeRemote(j.data);
+        return fetch(SYNC_URL + '/api', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({k: k, data: state})
+        }).then(function(r){ return r.json(); }).then(function(){ return n; });
+      })
+      .then(function(n){
+        tasks.forEach(applyState);
+        updateProgress();
+        try { localStorage.setItem(SYNC_LAST, String(Date.now())); } catch(e){}
+        toast(n ? ('已同步，合并 ' + n + ' 条') : '已同步');
+      })
+      .catch(function(e){ toast('同步失败：' + e.message); });
+  }
+
+  var autoSyncTimer = null;
+  function maybeAutoSync(){
+    if (!SYNC_URL || !getSyncKey()) return;
+    clearTimeout(autoSyncTimer);
+    autoSyncTimer = setTimeout(function(){ if (sinceSync() > 20000) syncNow(true); }, 6000);
+  }
+
+  document.getElementById('btnSync').addEventListener('click', function(){ syncNow(false); });
+  if (!SYNC_URL) document.getElementById('btnSync').style.display = 'none';   // 未配置则隐藏
+
+  // 打开页面 / 切回前台时自动同步一次
+  (function(){
+    if (!SYNC_URL || !getSyncKey()) return;
+    if (sinceSync() > 5 * 60 * 1000) setTimeout(function(){ syncNow(true); }, 1500);
+    document.addEventListener('visibilitychange', function(){
+      if (!document.hidden && sinceSync() > 60 * 1000) syncNow(true);
+    });
+  })();
 
   toast('提示：点每行右侧的 ✎ 写备注，勾选框做标记，都会自动保存');
 })();
