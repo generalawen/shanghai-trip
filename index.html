@@ -2508,16 +2508,19 @@ tr.note-row .note-box textarea{min-height:50px}
   var cur = null;
   kids.forEach(function(el){
     if (el.tagName === 'H1' || el.tagName === 'H2'){
-      cur = document.createElement('section');
-      cur.className = 'sec';
-      main.insertBefore(cur, el);
-      cur.appendChild(el);
+      // sec 必须是本次回调内的局部变量：若复用外层的 cur，
+      // 所有点击事件会共享同一个变量，最终都指向最后一个小节。
+      var sec = document.createElement('section');
+      sec.className = 'sec';
+      main.insertBefore(sec, el);
+      sec.appendChild(el);
+      cur = sec;
       var sp = document.createElement('span');
       sp.className = 'sec-prog';
       el.appendChild(sp);
       el.addEventListener('click', function(e){
         if (e.target.closest('a')) return;
-        cur.classList.toggle('collapsed');
+        sec.classList.toggle('collapsed');
       });
     } else if (cur){ cur.appendChild(el); }
   });
